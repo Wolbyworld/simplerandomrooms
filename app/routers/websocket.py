@@ -4,6 +4,7 @@ import json
 import random
 from typing import Dict, List, Set
 from datetime import datetime
+import logging
 
 from app.models.database import get_db, Room, Log
 
@@ -156,17 +157,47 @@ class ConnectionManager:
                 "type": "parameter_update",
                 "client_id": client_id,
                 "username": username,
-                "parameters": parameters
+                "parameters": parameters,
+                "timestamp": datetime.utcnow().isoformat()
             }
             
-            # Broadcast to room
-            await self.broadcast_to_room(room_id, message)
+            # Log the parameters being sent
+            logger.info(f"Broadcasting parameters to room {room_id}: {parameters}")
+            
+            # Track successful/failed sends
+            successful_sends = 0
+            failed_sends = 0
+            
+            # Send to each client individually to catch any errors
+            for recipient_id, connection in self.active_rooms[room_id].items():
+                try:
+                    await connection.send_text(json.dumps(message))
+                    successful_sends += 1
+                except Exception as e:
+                    failed_sends += 1
+                    logger.error(f"Error sending parameter update to client {recipient_id}: {e}")
+            
+            # Log results
+            logger.info(f"Parameter update broadcast complete: {successful_sends} successful, {failed_sends} failed")
+            
+            # If all sends failed, log a warning
+            if successful_sends == 0 and failed_sends > 0:
+                logger.warning(f"All parameter update broadcasts failed for room {room_id}")
+            
+            return successful_sends > 0
+        else:
+            logger.warning(f"Attempted to broadcast parameters to non-existent room {room_id}")
+            return False
 
 # Create connection manager
 manager = ConnectionManager()
 
 # Import asyncio for task creation
 import asyncio
+
+# Set up logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 # WebSocket endpoint
 @router.websocket("/ws/room/{room_id}")
@@ -179,10 +210,12 @@ async def websocket_endpoint(
     # Check if room exists in the database
     room = db.query(Room).filter(Room.id == room_id).first()
     if not room:
+        logger.warning(f"Client {client_id} attempted to connect to non-existent room {room_id}")
         await websocket.close(code=1008)  # Policy violation - room doesn't exist
         return
     
     # Accept connection
+    logger.info(f"Client {client_id} connecting to room {room_id}")
     await manager.connect(websocket, room_id, client_id)
     
     try:
@@ -191,7 +224,14 @@ async def websocket_endpoint(
             data = await websocket.receive_text()
             message = json.loads(data)
             
+            logger.debug(f"Received message from client {client_id} in room {room_id}: {message['type']}")
+            
             # Handle different message types
+            if message["type"] == "heartbeat":
+                # Just respond with an acknowledgment
+                await websocket.send_text(json.dumps({"type": "heartbeat_ack"}))
+                continue
+            
             if message["type"] == "name_change":
                 await manager.update_username(room_id, client_id, message["username"])
             
@@ -213,6 +253,9 @@ async def websocket_endpoint(
                                  with_replacement != room.with_replacement)
                 
                 if params_changed:
+                    # Log parameter changes
+                    logger.info(f"Parameters changed in room {room_id} by client {client_id}: {min_val}-{max_val} (repl: {with_replacement})")
+                    
                     # Update room parameters in database
                     room.min_value = min_val
                     room.max_value = max_val
@@ -228,6 +271,7 @@ async def websocket_endpoint(
                 
                 # If parameters changed, broadcast the update
                 if params_changed:
+                    logger.info(f"Broadcasting parameter update for room {room_id}")
                     await manager.broadcast_parameter_update(room_id, client_id, {
                         "min_value": min_val,
                         "max_value": max_val,
@@ -236,8 +280,9 @@ async def websocket_endpoint(
     
     except WebSocketDisconnect:
         # Handle disconnection
+        logger.info(f"Client {client_id} disconnected from room {room_id}")
         manager.disconnect(room_id, client_id)
     except Exception as e:
         # Handle other errors
-        print(f"Error in WebSocket: {e}")
+        logger.error(f"Error in WebSocket for client {client_id} in room {room_id}: {e}")
         manager.disconnect(room_id, client_id) 

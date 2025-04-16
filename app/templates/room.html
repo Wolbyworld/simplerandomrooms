@@ -301,16 +301,23 @@
         const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
         const wsUrl = `${protocol}//${window.location.host}/ws/room/${roomId}?client_id=${clientId}`;
         let socket;
+        let reconnectAttempts = 0;
+        const MAX_RECONNECT_ATTEMPTS = 10;
         
         function connectWebSocket() {
+            console.log('Attempting WebSocket connection to:', wsUrl);
             socket = new WebSocket(wsUrl);
             
             socket.onopen = function(e) {
                 console.log('WebSocket connection established');
                 isConnected = true;
+                reconnectAttempts = 0; // Reset reconnect counter on successful connection
                 
                 // Load initial logs
                 loadLogs();
+                
+                // Add to activity log (only visible to current user)
+                addLogEntry("Connection established");
             };
             
             socket.onmessage = function(event) {
@@ -340,15 +347,47 @@
             };
             
             socket.onclose = function(event) {
-                console.log('WebSocket connection closed');
+                console.log('WebSocket connection closed with code:', event.code);
                 isConnected = false;
                 
-                // Try to reconnect after a delay
-                setTimeout(connectWebSocket, 3000);
+                // Try to reconnect with exponential backoff
+                if (reconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
+                    const delay = Math.min(1000 * Math.pow(1.5, reconnectAttempts), 10000);
+                    reconnectAttempts++;
+                    console.log(`Reconnecting in ${delay}ms (attempt ${reconnectAttempts}/${MAX_RECONNECT_ATTEMPTS})`);
+                    
+                    setTimeout(connectWebSocket, delay);
+                } else {
+                    console.error('Maximum reconnection attempts reached. Please refresh the page.');
+                    addLogEntry("Connection lost. Please refresh the page.");
+                    
+                    // Display connection error to user
+                    const notification = document.createElement('div');
+                    notification.className = 'parameter-update-notification';
+                    notification.style.borderColor = '#f44336';
+                    notification.innerHTML = `
+                        <div class="notification-content">
+                            <strong>Connection Error</strong>
+                            <br>WebSocket connection lost.
+                            <br>Please refresh the page to reconnect.
+                        </div>
+                        <button class="notification-close">×</button>
+                    `;
+                    
+                    // Add close button functionality
+                    const closeBtn = notification.querySelector('.notification-close');
+                    closeBtn.addEventListener('click', () => {
+                        notification.remove();
+                    });
+                    
+                    // Add to the document
+                    document.body.appendChild(notification);
+                }
             };
             
             socket.onerror = function(error) {
                 console.error('WebSocket error:', error);
+                // Don't need to handle disconnect here - onclose will be called
             };
         }
         
@@ -418,11 +457,17 @@
             
             // Ignore if this is our own update
             if (message.client_id === clientId) {
+                console.log('Ignoring own parameter update');
                 return;
             }
             
             const params = message.parameters;
-            if (!params) return;
+            if (!params) {
+                console.error('Received parameter update without parameters');
+                return;
+            }
+            
+            console.log(`Updating parameters to: min=${params.min_value}, max=${params.max_value}, replacement=${params.with_replacement}`);
             
             // Create a notification element
             const notification = document.createElement('div');
@@ -453,18 +498,25 @@
             // Add log entry
             addLogEntry(`${message.username} changed draw settings to ${params.min_value}-${params.max_value} (replacement: ${params.with_replacement ? 'Yes' : 'No'})`);
             
-            // Update form values if in number draw mode and elements exist
-            if (!isCoinFlip) {
-                // These elements only exist in number draw mode
-                const minInput = document.getElementById('min-value');
-                const maxInput = document.getElementById('max-value');
-                const replaceCheckbox = document.getElementById('with-replacement');
-                
-                if (minInput && maxInput && replaceCheckbox) {
-                    minInput.value = params.min_value;
-                    maxInput.value = params.max_value;
-                    replaceCheckbox.checked = params.with_replacement;
+            try {
+                // Update form values if in number draw mode and elements exist
+                if (!isCoinFlip) {
+                    // These elements only exist in number draw mode
+                    const minInput = document.getElementById('min-value');
+                    const maxInput = document.getElementById('max-value');
+                    const replaceCheckbox = document.getElementById('with-replacement');
+                    
+                    if (minInput && maxInput && replaceCheckbox) {
+                        console.log('Updating form fields with new parameters');
+                        minInput.value = params.min_value;
+                        maxInput.value = params.max_value;
+                        replaceCheckbox.checked = params.with_replacement;
+                    } else {
+                        console.warn('Form elements not found for parameter update');
+                    }
                 }
+            } catch (error) {
+                console.error('Error updating form fields:', error);
             }
             
             // Add to the document
@@ -612,15 +664,18 @@
             console.log('Connecting to WebSocket...');
             connectWebSocket();
             
-            // Send a heartbeat every 30 seconds to keep the connection alive
+            // Send a heartbeat every 20 seconds to keep the connection alive
             setInterval(function() {
                 if (socket && socket.readyState === WebSocket.OPEN) {
+                    console.log('Sending heartbeat ping');
                     socket.send(JSON.stringify({
                         type: 'heartbeat',
                         client_id: clientId
                     }));
+                } else if (!isConnected) {
+                    console.log('Socket not connected during heartbeat check');
                 }
-            }, 30000);
+            }, 20000); // Reduced from 30s to 20s for Heroku
         });
         
         // Function to fetch statistics and update counters
