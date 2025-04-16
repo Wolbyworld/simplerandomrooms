@@ -18,6 +18,10 @@ class ConnectionManager:
         self.active_rooms: Dict[str, Dict[str, WebSocket]] = {}
         # Map of room_id to dictionary of client_id: username
         self.user_names: Dict[str, Dict[str, str]] = {}
+        # Track last activity time for each client
+        self.last_activity: Dict[str, Dict[str, datetime]] = {}
+        # Inactivity timeout in seconds (10 minutes)
+        self.inactivity_timeout = 10 * 60
         
     async def connect(self, websocket: WebSocket, room_id: str, client_id: str):
         await websocket.accept()
@@ -26,6 +30,7 @@ class ConnectionManager:
         if room_id not in self.active_rooms:
             self.active_rooms[room_id] = {}
             self.user_names[room_id] = {}
+            self.last_activity[room_id] = {}
         
         # Add connection to room
         self.active_rooms[room_id][client_id] = websocket
@@ -33,6 +38,9 @@ class ConnectionManager:
         # Set default username
         default_name = f"User {len(self.active_rooms[room_id])}"
         self.user_names[room_id][client_id] = default_name
+        
+        # Initialize last activity time
+        self.last_activity[room_id][client_id] = datetime.utcnow()
         
         # Broadcast the join event
         await self.broadcast_join(room_id, client_id)
@@ -42,10 +50,16 @@ class ConnectionManager:
             # Remove connection
             del self.active_rooms[room_id][client_id]
             
+            # Remove last activity tracking
+            if room_id in self.last_activity and client_id in self.last_activity[room_id]:
+                del self.last_activity[room_id][client_id]
+            
             # If room is empty, remove it
             if not self.active_rooms[room_id]:
                 del self.active_rooms[room_id]
                 del self.user_names[room_id]
+                if room_id in self.last_activity:
+                    del self.last_activity[room_id]
             else:
                 # Broadcast leave event
                 username = self.user_names[room_id].get(client_id, "Unknown user")
@@ -188,6 +202,40 @@ class ConnectionManager:
         else:
             logger.warning(f"Attempted to broadcast parameters to non-existent room {room_id}")
             return False
+    
+    def update_activity(self, room_id: str, client_id: str):
+        """Update the last activity time for a client"""
+        if room_id in self.last_activity:
+            self.last_activity[room_id][client_id] = datetime.utcnow()
+            
+    async def cleanup_inactive_connections(self):
+        """Remove connections that have been inactive for too long"""
+        now = datetime.utcnow()
+        cleaned_connections = 0
+        
+        for room_id in list(self.active_rooms.keys()):
+            # Skip empty rooms
+            if not self.active_rooms[room_id]:
+                continue
+                
+            # Check each connection in the room
+            for client_id in list(self.active_rooms[room_id].keys()):
+                # Check last activity time
+                if room_id in self.last_activity and client_id in self.last_activity[room_id]:
+                    last_active = self.last_activity[room_id][client_id]
+                    inactive_seconds = (now - last_active).total_seconds()
+                    
+                    # If inactive for too long, disconnect
+                    if inactive_seconds > self.inactivity_timeout:
+                        logger.info(f"Cleaning up inactive connection: client {client_id} in room {room_id} " +
+                                   f"(inactive for {inactive_seconds:.1f} seconds)")
+                        self.disconnect(room_id, client_id)
+                        cleaned_connections += 1
+        
+        if cleaned_connections > 0:
+            logger.info(f"Cleaned up {cleaned_connections} inactive connections")
+        
+        return cleaned_connections
 
 # Create connection manager
 manager = ConnectionManager()
@@ -224,6 +272,9 @@ async def websocket_endpoint(
             data = await websocket.receive_text()
             message = json.loads(data)
             
+            # Update last activity time
+            manager.update_activity(room_id, client_id)
+            
             logger.debug(f"Received message from client {client_id} in room {room_id}: {message['type']}")
             
             # Handle different message types
@@ -231,6 +282,11 @@ async def websocket_endpoint(
                 # Just respond with an acknowledgment
                 await websocket.send_text(json.dumps({"type": "heartbeat_ack"}))
                 continue
+            
+            if message["type"] == "disconnect":
+                # Explicit disconnect from client (tab closing)
+                logger.info(f"Client {client_id} explicitly disconnected from room {room_id}")
+                break
             
             if message["type"] == "name_change":
                 await manager.update_username(room_id, client_id, message["username"])
@@ -285,4 +341,19 @@ async def websocket_endpoint(
     except Exception as e:
         # Handle other errors
         logger.error(f"Error in WebSocket for client {client_id} in room {room_id}: {e}")
-        manager.disconnect(room_id, client_id) 
+        manager.disconnect(room_id, client_id)
+
+# Background task for cleaning up inactive connections
+async def cleanup_background_task():
+    """Background task to periodically clean up inactive connections"""
+    while True:
+        try:
+            await manager.cleanup_inactive_connections()
+        except Exception as e:
+            logger.error(f"Error in cleanup task: {e}")
+        
+        # Wait for 5 minutes before next cleanup
+        await asyncio.sleep(5 * 60)
+
+# Export the background task for startup
+cleanup_task = None 

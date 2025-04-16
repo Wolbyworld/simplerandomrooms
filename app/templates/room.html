@@ -665,7 +665,7 @@
             connectWebSocket();
             
             // Send a heartbeat every 20 seconds to keep the connection alive
-            setInterval(function() {
+            const heartbeatInterval = setInterval(function() {
                 if (socket && socket.readyState === WebSocket.OPEN) {
                     console.log('Sending heartbeat ping');
                     socket.send(JSON.stringify({
@@ -676,6 +676,37 @@
                     console.log('Socket not connected during heartbeat check');
                 }
             }, 20000); // Reduced from 30s to 20s for Heroku
+            
+            // Clean up on page unload (tab close or navigation away)
+            window.addEventListener('beforeunload', function() {
+                console.log('Page unloading, cleaning up WebSocket connection');
+                // Clear heartbeat interval
+                clearInterval(heartbeatInterval);
+                
+                // Send disconnect message if connected
+                if (socket && socket.readyState === WebSocket.OPEN) {
+                    // Use sendBeacon for more reliable delivery during page unload
+                    const disconnectMsg = JSON.stringify({
+                        type: 'disconnect',
+                        client_id: clientId
+                    });
+                    
+                    try {
+                        // Try to use the WebSocket first
+                        socket.send(disconnectMsg);
+                        
+                        // As a backup, also try to use navigator.sendBeacon with a POST request
+                        // This is more likely to complete during page unload
+                        const blob = new Blob([disconnectMsg], { type: 'application/json' });
+                        navigator.sendBeacon(`/api/disconnect?room_id=${roomId}&client_id=${clientId}`, blob);
+                    } catch (e) {
+                        console.error('Error during disconnect:', e);
+                    }
+                    
+                    // Close the WebSocket connection
+                    socket.close();
+                }
+            });
         });
         
         // Function to fetch statistics and update counters
