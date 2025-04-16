@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Random Draw Room</title>
+    <link rel="stylesheet" href="{{ url_for('static', path='css/styles.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', path='css/room.css') }}">
+</head>
+<body>
+    <div class="container room-container">
+        <header>
+            <h1>Random Draw Room</h1>
+            <div id="user-display">
+                <div class="user-count">
+                    <span id="user-count-value">0</span> participants
+                </div>
+                <div class="user-pills" id="user-pills"></div>
+            </div>
+        </header>
+
+        <div class="share-box">
+            <input type="text" id="room-url" value="{{ request.url }}" readonly>
+            <button id="copy-url-btn">Copy URL</button>
+        </div>
+        
+        <div class="name-box">
+            <label for="username">Your Name:</label>
+            <input type="text" id="username" placeholder="Enter your name">
+            <button id="update-name-btn">Update</button>
+        </div>
+
+        <main>
+            {% if room.is_coin_flip %}
+                <div class="action-box coin-flip-box">
+                    <h2>Coin Flip</h2>
+                    <div class="coin-container">
+                        <div class="coin" id="coin">
+                            <div class="heads"></div>
+                            <div class="tails"></div>
+                        </div>
+                    </div>
+                    <button id="flip-coin-btn" disabled>Flip Coin</button>
+                    <p id="not-enough-users" class="warning">At least 2 participants required</p>
+                </div>
+            {% else %}
+                <div class="action-box number-draw-box">
+                    <h2>Number Draw</h2>
+                    <form id="number-params-form">
+                        <div class="form-group">
+                            <label for="min-value">Minimum Value:</label>
+                            <input type="number" id="min-value" name="min_value" value="{{ room.min_value }}" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="max-value">Maximum Value:</label>
+                            <input type="number" id="max-value" name="max_value" value="{{ room.max_value }}" required>
+                        </div>
+                        <div class="form-group checkbox-group">
+                            <input type="checkbox" id="with-replacement" name="with_replacement" {% if room.with_replacement %}checked{% endif %}>
+                            <label for="with-replacement">With Replacement</label>
+                        </div>
+                        <button type="submit">Update Parameters</button>
+                    </form>
+                    
+                    <div class="number-result">
+                        <div class="number-display" id="number-display">?</div>
+                    </div>
+                    
+                    <button id="draw-number-btn" disabled>Draw Number</button>
+                    <p id="not-enough-users" class="warning">At least 2 participants required</p>
+                </div>
+            {% endif %}
+
+            <div class="history-box">
+                <h2>Activity Log</h2>
+                <div id="activity-log" class="activity-log"></div>
+            </div>
+        </main>
+
+        <footer>
+            <p>&copy; 2024 Random Draw Website</p>
+        </footer>
+    </div>
+
+    <script>
+        // Store room data
+        const roomId = "{{ room_id }}";
+        const isCoinFlip = {% if room.is_coin_flip %}true{% else %}false{% endif %};
+        const clientId = Date.now().toString() + Math.random().toString(36).substring(2, 15);
+        
+        // Initialize state variables
+        let username = `User ${Math.floor(Math.random() * 1000)}`;
+        let isConnected = false;
+        let users = [];
+        let page = 0;
+        let hasMoreLogs = true;
+        let isLoadingLogs = false;
+        
+        // DOM elements
+        const userCountElement = document.getElementById('user-count-value');
+        const userPillsElement = document.getElementById('user-pills');
+        const usernameInput = document.getElementById('username');
+        const updateNameBtn = document.getElementById('update-name-btn');
+        const activityLog = document.getElementById('activity-log');
+        const copyUrlBtn = document.getElementById('copy-url-btn');
+        const roomUrlInput = document.getElementById('room-url');
+        
+        {% if room.is_coin_flip %}
+            const flipCoinBtn = document.getElementById('flip-coin-btn');
+            const coinElement = document.getElementById('coin');
+        {% else %}
+            const drawNumberBtn = document.getElementById('draw-number-btn');
+            const numberDisplay = document.getElementById('number-display');
+            const numberParamsForm = document.getElementById('number-params-form');
+        {% endif %}
+        
+        // Set initial username
+        usernameInput.value = username;
+        
+        // WebSocket connection
+        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const wsUrl = `${protocol}//${window.location.host}/ws/room/${roomId}?client_id=${clientId}`;
+        let socket;
+        
+        function connectWebSocket() {
+            socket = new WebSocket(wsUrl);
+            
+            socket.onopen = function(e) {
+                console.log('WebSocket connection established');
+                isConnected = true;
+                
+                // Load initial logs
+                loadLogs();
+            };
+            
+            socket.onmessage = function(event) {
+                const message = JSON.parse(event.data);
+                console.log('Message received:', message);
+                
+                switch(message.type) {
+                    case 'join':
+                        handleJoin(message);
+                        break;
+                    case 'leave':
+                        handleLeave(message);
+                        break;
+                    case 'name_change':
+                        handleNameChange(message);
+                        break;
+                    case 'random_action':
+                        handleRandomAction(message);
+                        break;
+                }
+            };
+            
+            socket.onclose = function(event) {
+                console.log('WebSocket connection closed');
+                isConnected = false;
+                
+                // Try to reconnect after a delay
+                setTimeout(connectWebSocket, 2000);
+            };
+            
+            socket.onerror = function(error) {
+                console.error('WebSocket error:', error);
+            };
+        }
+        
+        // Handle user join
+        function handleJoin(message) {
+            users = message.users;
+            updateUserDisplay();
+            
+            if (message.client_id !== clientId) {
+                addLogEntry(`${message.username} joined the room`);
+            }
+        }
+        
+        // Handle user leave
+        function handleLeave(message) {
+            users = message.users;
+            updateUserDisplay();
+            
+            addLogEntry(`${message.username} left the room`);
+        }
+        
+        // Handle name change
+        function handleNameChange(message) {
+            users = message.users;
+            updateUserDisplay();
+            
+            if (message.client_id !== clientId) {
+                addLogEntry(`${message.old_name} changed their name to ${message.new_name}`);
+            }
+        }
+        
+        // Handle random action (coin flip or number draw)
+        function handleRandomAction(message) {
+            // Add log entry
+            const actionText = `${message.username} performed ${message.action.toLowerCase()}: ${message.result}`;
+            addLogEntry(actionText);
+            
+            // Perform animation
+            if (message.action === 'Coin Flip' && isCoinFlip) {
+                performCoinFlipAnimation(message.result);
+            } else if (message.action === 'Number Draw' && !isCoinFlip) {
+                performNumberDrawAnimation(message.result);
+            }
+        }
+        
+        // Update user display
+        function updateUserDisplay() {
+            // Update count
+            userCountElement.textContent = users.length;
+            
+            // Update action button state
+            const actionButton = isCoinFlip ? flipCoinBtn : drawNumberBtn;
+            const warningElement = document.getElementById('not-enough-users');
+            
+            if (users.length >= 2) {
+                actionButton.disabled = false;
+                warningElement.style.display = 'none';
+            } else {
+                actionButton.disabled = true;
+                warningElement.style.display = 'block';
+            }
+            
+            // Update user pills
+            userPillsElement.innerHTML = '';
+            users.forEach(user => {
+                const pill = document.createElement('div');
+                pill.className = 'user-pill';
+                if (user.client_id === clientId) {
+                    pill.className += ' current-user';
+                }
+                pill.textContent = user.username;
+                userPillsElement.appendChild(pill);
+            });
+        }
+        
+        // Add log entry
+        function addLogEntry(text, timestamp = new Date().toISOString()) {
+            const logEntry = document.createElement('div');
+            logEntry.className = 'log-entry';
+            
+            const formattedTime = new Date(timestamp).toLocaleTimeString();
+            
+            logEntry.innerHTML = `
+                <span class="log-time">${formattedTime}</span>
+                <span class="log-text">${text}</span>
+            `;
+            
+            activityLog.insertBefore(logEntry, activityLog.firstChild);
+        }
+        
+        // Load logs from the server
+        async function loadLogs() {
+            if (isLoadingLogs || !hasMoreLogs) return;
+            
+            isLoadingLogs = true;
+            
+            try {
+                const response = await fetch(`/room/${roomId}/logs?page=${page}`);
+                const data = await response.json();
+                
+                if (data.logs.length === 0) {
+                    hasMoreLogs = false;
+                } else {
+                    // Add logs to the display
+                    data.logs.forEach(log => {
+                        const logText = `${log.user_name} performed ${log.action.toLowerCase()}: ${log.result}`;
+                        addLogEntry(logText, log.timestamp);
+                    });
+                    
+                    page++;
+                }
+            } catch (error) {
+                console.error('Error loading logs:', error);
+            } finally {
+                isLoadingLogs = false;
+            }
+        }
+        
+        // Copy room URL to clipboard
+        copyUrlBtn.addEventListener('click', () => {
+            roomUrlInput.select();
+            document.execCommand('copy');
+            
+            copyUrlBtn.textContent = 'Copied!';
+            setTimeout(() => {
+                copyUrlBtn.textContent = 'Copy URL';
+            }, 2000);
+        });
+        
+        // Update username
+        updateNameBtn.addEventListener('click', () => {
+            const newName = usernameInput.value.trim();
+            if (newName && newName !== username) {
+                username = newName;
+                
+                if (isConnected) {
+                    socket.send(JSON.stringify({
+                        type: 'name_change',
+                        username: username
+                    }));
+                }
+            }
+        });
+        
+        {% if room.is_coin_flip %}
+            // Coin flip animation
+            function performCoinFlipAnimation(result) {
+                coinElement.className = 'coin';
+                void coinElement.offsetWidth; // Force reflow
+                
+                coinElement.className = 'coin coin-' + (result === 'Heads' ? 'heads' : 'tails');
+            }
+            
+            // Handle coin flip button
+            flipCoinBtn.addEventListener('click', () => {
+                if (isConnected) {
+                    socket.send(JSON.stringify({
+                        type: 'coin_flip'
+                    }));
+                }
+            });
+        {% else %}
+            // Number draw animation
+            function performNumberDrawAnimation(result) {
+                numberDisplay.className = 'number-display';
+                void numberDisplay.offsetWidth; // Force reflow
+                
+                numberDisplay.textContent = result;
+                numberDisplay.className = 'number-display number-reveal';
+            }
+            
+            // Handle number draw button
+            drawNumberBtn.addEventListener('click', () => {
+                if (isConnected) {
+                    socket.send(JSON.stringify({
+                        type: 'number_draw'
+                    }));
+                }
+            });
+            
+            // Handle parameter update form
+            numberParamsForm.addEventListener('submit', async (event) => {
+                event.preventDefault();
+                
+                const formData = new FormData(numberParamsForm);
+                
+                try {
+                    const response = await fetch(`/room/${roomId}/update-params`, {
+                        method: 'POST',
+                        body: formData
+                    });
+                    
+                    if (response.ok) {
+                        const data = await response.json();
+                        console.log('Parameters updated:', data);
+                    } else {
+                        const error = await response.json();
+                        alert(`Error: ${error.detail}`);
+                    }
+                } catch (error) {
+                    console.error('Error updating parameters:', error);
+                    alert('Failed to update parameters');
+                }
+            });
+        {% endif %}
+        
+        // Infinite scroll for logs
+        activityLog.addEventListener('scroll', () => {
+            if (activityLog.scrollTop + activityLog.clientHeight >= activityLog.scrollHeight - 50) {
+                loadLogs();
+            }
+        });
+        
+        // Connect to WebSocket when page loads
+        connectWebSocket();
+    </script>
+</body>
+</html> 

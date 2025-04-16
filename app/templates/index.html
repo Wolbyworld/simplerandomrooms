@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Random Draw Website</title>
+    <link rel="stylesheet" href="{{ url_for('static', path='css/styles.css') }}">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Random Draw Website</h1>
+            <p class="subtitle">A simple, retro-vintage random number generator</p>
+        </header>
+        <main>
+            <p class="description">
+                Create a room to perform random draws or coin flips with friends.
+                No login required, just share the unique URL.
+            </p>
+            <div class="button-container">
+                <form action="/create-room" method="post">
+                    <div class="room-type-selection">
+                        <div class="room-type-option">
+                            <input type="radio" id="number-draw" name="is_coin_flip" value="false" checked>
+                            <label for="number-draw">Number Draw</label>
+                        </div>
+                        <div class="room-type-option">
+                            <input type="radio" id="coin-flip" name="is_coin_flip" value="true">
+                            <label for="coin-flip">Coin Flip</label>
+                        </div>
+                    </div>
+                    <button type="submit" class="create-room-button">Create Room</button>
+                </form>
+            </div>
+        </main>
+        <footer>
+            <p>&copy; 2024 Random Draw Website</p>
+        </footer>
+    </div>
+</body>
+</html> 
