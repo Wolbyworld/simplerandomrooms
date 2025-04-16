@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="light">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -15,6 +15,9 @@
         <header>
             <div class="home-link">
                 <a href="/" class="back-link">← Back to Home</a>
+                <button id="theme-toggle" class="theme-toggle" aria-label="Toggle dark mode">
+                    <span class="theme-toggle-icon">🌙</span>
+                </button>
             </div>
             <h1>Random Draw Room</h1>
             <div id="user-display">
@@ -40,7 +43,15 @@
                             <div class="tails"></div>
                         </div>
                     </div>
+                    <div class="participants-progress-container">
+                        <div class="participants-progress">
+                            <div class="progress-bar"><div id="progress-fill" class="progress-fill"></div></div>
+                            <div class="progress-text"><span id="current-participants">1</span>/2 participants</div>
+                        </div>
+                        <p class="invite-prompt">Share the URL above to invite friends!</p>
+                    </div>
                     <button id="flip-coin-btn" disabled>Flip Coin</button>
+                    <button id="demo-mode-btn" class="demo-mode-btn">Quick Start (Demo Mode)</button>
                     <p id="not-enough-users" class="warning">At least 2 participants required</p>
                 </div>
             {% else %}
@@ -65,7 +76,16 @@
                         <div class="number-display" id="number-display">?</div>
                     </div>
                     
+                    <div class="participants-progress-container">
+                        <div class="participants-progress">
+                            <div class="progress-bar"><div id="progress-fill" class="progress-fill"></div></div>
+                            <div class="progress-text"><span id="current-participants">1</span>/2 participants</div>
+                        </div>
+                        <p class="invite-prompt">Share the URL above to invite friends!</p>
+                    </div>
+                    
                     <button id="draw-number-btn" disabled>Draw Number</button>
+                    <button id="demo-mode-btn" class="demo-mode-btn">Quick Start (Demo Mode)</button>
                     <p id="not-enough-users" class="warning">At least 2 participants required</p>
                 </div>
             {% endif %}
@@ -103,13 +123,124 @@
         let page = 0;
         let hasMoreLogs = true;
         let isLoadingLogs = false;
+        let isDemoMode = false;
         
         // DOM elements
         const userCountElement = document.getElementById('user-count-value');
+        const currentParticipantsEl = document.getElementById('current-participants');
+        const progressFillEl = document.getElementById('progress-fill');
         const userPillsElement = document.getElementById('user-pills');
         const activityLog = document.getElementById('activity-log');
         const copyUrlBtn = document.getElementById('copy-url-btn');
         const roomUrlInput = document.getElementById('room-url');
+        const demoModeBtn = document.getElementById('demo-mode-btn');
+        const themeToggle = document.getElementById('theme-toggle');
+        
+        // Initialize theme based on user preference
+        function initTheme() {
+            const savedTheme = localStorage.getItem('theme') || 'light';
+            document.documentElement.setAttribute('data-theme', savedTheme);
+            updateThemeToggleIcon(savedTheme);
+        }
+        
+        // Update theme toggle icon based on current theme
+        function updateThemeToggleIcon(theme) {
+            const icon = themeToggle.querySelector('.theme-toggle-icon');
+            icon.textContent = theme === 'dark' ? '☀️' : '🌙';
+        }
+        
+        // Toggle between light and dark themes
+        function toggleTheme() {
+            const currentTheme = document.documentElement.getAttribute('data-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            
+            document.documentElement.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+            updateThemeToggleIcon(newTheme);
+        }
+        
+        // Theme toggle event listener
+        themeToggle.addEventListener('click', toggleTheme);
+        
+        // Initialize theme on page load
+        initTheme();
+        
+        // Function to update participant progress bar
+        function updateParticipantProgress() {
+            const count = users.length;
+            userCountElement.textContent = count;
+            currentParticipantsEl.textContent = count;
+            
+            // Calculate progress percentage (max 100%)
+            const progressPercentage = Math.min((count / 2) * 100, 100);
+            progressFillEl.style.width = `${progressPercentage}%`;
+            
+            // Update button states
+            updateButtonStates();
+        }
+        
+        // Demo mode functionality
+        demoModeBtn.addEventListener('click', function() {
+            isDemoMode = !isDemoMode; // Toggle demo mode state
+            
+            if (isDemoMode) {
+                // Activate demo mode
+                demoModeBtn.classList.add('active');
+                demoModeBtn.textContent = 'Exit Demo Mode';
+                
+                // Add demo indicator to page if it doesn't exist
+                if (!document.querySelector('.demo-indicator')) {
+                    const demoIndicator = document.createElement('div');
+                    demoIndicator.className = 'demo-indicator';
+                    demoIndicator.textContent = 'DEMO MODE';
+                    document.querySelector('.action-box').appendChild(demoIndicator);
+                }
+                
+                // Add to activity log
+                addLogEntry({
+                    timestamp: new Date().toISOString(),
+                    action: 'demo_mode_activated',
+                    user_id: clientId,
+                    user_name: 'You'
+                });
+            } else {
+                // Deactivate demo mode
+                demoModeBtn.classList.remove('active');
+                demoModeBtn.textContent = 'Quick Start (Demo Mode)';
+                
+                // Remove demo indicator
+                const indicator = document.querySelector('.demo-indicator');
+                if (indicator) {
+                    indicator.remove();
+                }
+                
+                // Add to activity log
+                addLogEntry({
+                    timestamp: new Date().toISOString(),
+                    action: 'demo_mode_deactivated',
+                    user_id: clientId,
+                    user_name: 'You'
+                });
+            }
+            
+            // Update button states
+            updateButtonStates();
+        });
+        
+        // Function to update button states based on participant count or demo mode
+        function updateButtonStates() {
+            const buttons = isCoinFlip ? [flipCoinBtn] : [drawNumberBtn];
+            
+            buttons.forEach(btn => {
+                if (isDemoMode || users.length >= 2) {
+                    btn.disabled = false;
+                    document.getElementById('not-enough-users').style.display = 'none';
+                } else {
+                    btn.disabled = true;
+                    document.getElementById('not-enough-users').style.display = 'block';
+                }
+            });
+        }
         
         {% if room.is_coin_flip %}
             const flipCoinBtn = document.getElementById('flip-coin-btn');
@@ -153,6 +284,12 @@
                     if (!response.ok) {
                         const error = await response.json();
                         console.error(`Error: ${error.detail}`);
+                    } else {
+                        console.log('Parameters updated successfully:', {
+                            min_value: minValue,
+                            max_value: maxValue,
+                            with_replacement: withReplacementCheckbox.checked
+                        });
                     }
                 } catch (error) {
                     console.error('Error updating parameters:', error);
@@ -201,7 +338,7 @@
                 isConnected = false;
                 
                 // Try to reconnect after a delay
-                setTimeout(connectWebSocket, 2000);
+                setTimeout(connectWebSocket, 3000);
             };
             
             socket.onerror = function(error) {
@@ -209,13 +346,20 @@
             };
         }
         
-        // Handle user join
+        // Handle join events
         function handleJoin(message) {
             users = message.users;
-            updateUserDisplay();
+            updateUsersList();
+            updateParticipantProgress();
             
-            if (message.client_id !== clientId) {
-                addLogEntry(`${message.username} joined the room`);
+            // Add to activity log
+            if (message.user_id !== clientId) {
+                addLogEntry({
+                    timestamp: message.timestamp,
+                    action: 'join',
+                    user_id: message.user_id,
+                    user_name: message.user_name
+                });
             }
         }
         
@@ -288,9 +432,22 @@
             
             const formattedTime = new Date(timestamp).toLocaleTimeString();
             
+            // Check if text is an object or string
+            let logText = text;
+            if (typeof text === 'object') {
+                if (text.action === 'demo_mode_activated') {
+                    logText = 'You activated Demo Mode';
+                } else if (text.action === 'demo_mode_deactivated') {
+                    logText = 'You deactivated Demo Mode';
+                } else {
+                    // For other object-based logs
+                    logText = `${text.user_name || 'User'} ${text.action || 'performed an action'}`;
+                }
+            }
+            
             logEntry.innerHTML = `
                 <span class="log-time">${formattedTime}</span>
-                <span class="log-text">${text}</span>
+                <span class="log-text">${logText}</span>
             `;
             
             activityLog.insertBefore(logEntry, activityLog.firstChild);
@@ -368,7 +525,10 @@
                     // First update parameters then perform the draw
                     updateParameters().then(() => {
                         socket.send(JSON.stringify({
-                            type: 'number_draw'
+                            type: 'number_draw',
+                            with_replacement: withReplacementCheckbox.checked,
+                            min_value: parseInt(minValueInput.value),
+                            max_value: parseInt(maxValueInput.value)
                         }));
                     });
                 }

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="light">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -12,6 +12,11 @@
 <body>
     <div class="container">
         <header>
+            <div class="header-top">
+                <button id="theme-toggle" class="theme-toggle" aria-label="Toggle dark mode">
+                    <span class="theme-toggle-icon">🌙</span>
+                </button>
+            </div>
             <h1>Random Draw Website</h1>
             <p class="subtitle">A simple, retro-vintage random number generator</p>
         </header>
@@ -85,8 +90,40 @@
             }
         }
         
-        // Fetch stats when page loads
-        document.addEventListener('DOMContentLoaded', updateStats);
+        // Theme management
+        const themeToggle = document.getElementById('theme-toggle');
+        
+        // Initialize theme based on user preference
+        function initTheme() {
+            const savedTheme = localStorage.getItem('theme') || 'light';
+            document.documentElement.setAttribute('data-theme', savedTheme);
+            updateThemeToggleIcon(savedTheme);
+        }
+        
+        // Update theme toggle icon based on current theme
+        function updateThemeToggleIcon(theme) {
+            const icon = themeToggle.querySelector('.theme-toggle-icon');
+            icon.textContent = theme === 'dark' ? '☀️' : '🌙';
+        }
+        
+        // Toggle between light and dark themes
+        function toggleTheme() {
+            const currentTheme = document.documentElement.getAttribute('data-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            
+            document.documentElement.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+            updateThemeToggleIcon(newTheme);
+        }
+        
+        // Theme toggle event listener
+        themeToggle.addEventListener('click', toggleTheme);
+        
+        // Initialize theme and fetch stats when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            initTheme();
+            updateStats();
+        });
     </script>
 </body>
 </html> 

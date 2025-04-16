@@ -6,6 +6,34 @@
     --button-color: #c0b283;
     --border-color: #706f6f;
     --container-bg: #f9f4da;
+    --input-bg: #f8f8f0;
+    --tooltip-bg: rgba(0,0,0,0.8);
+    --disabled-color: #aaa;
+    --progress-bg: #e5e5e5;
+    --progress-fill: #9b6a6c;
+    --warning-color: #cc3300;
+    --demo-color: #c0b283;
+    --demo-text: #333;
+    --demo-active: #9b6a6c;
+}
+
+/* Dark theme variables */
+[data-theme="dark"] {
+    --bg-color: #222222;
+    --text-color: #e0e0e0;
+    --accent-color: #d88286;
+    --button-color: #a89863;
+    --border-color: #8a8a8a;
+    --container-bg: #333333;
+    --input-bg: #444444;
+    --tooltip-bg: rgba(0,0,0,0.9);
+    --disabled-color: #777;
+    --progress-bg: #444444;
+    --progress-fill: #d88286;
+    --warning-color: #ff6b6b;
+    --demo-color: #a89863;
+    --demo-text: #e0e0e0;
+    --demo-active: #d88286;
 }
 
 * {
@@ -20,6 +48,7 @@ body {
     color: var(--text-color);
     line-height: 1.6;
     padding: 20px;
+    transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 .container {
@@ -29,6 +58,7 @@ body {
     padding: 40px;
     border: 1px solid var(--border-color);
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    transition: background-color 0.3s ease;
 }
 
 header {
@@ -42,6 +72,7 @@ h1 {
     font-size: 2.5rem;
     margin-bottom: 10px;
     color: var(--accent-color);
+    transition: color 0.3s ease;
 }
 
 .subtitle {
@@ -116,21 +147,6 @@ footer {
     font-size: 0.85rem;
 }
 
-/* Responsive adjustments */
-@media (max-width: 768px) {
-    .container {
-        padding: 20px;
-    }
-    
-    h1 {
-        font-size: 2rem;
-    }
-    
-    .description {
-        font-size: 1rem;
-    }
-}
-
 /* Room type selection */
 .room-type-selection {
     display: flex;
@@ -153,8 +169,146 @@ footer {
     cursor: pointer;
 }
 
+/* Theme toggle button */
+.theme-toggle {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+    position: absolute;
+    right: 20px;
+    top: 20px;
+    padding: 5px;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: var(--button-color);
+    transition: background-color 0.3s ease;
+}
+
+.theme-toggle:hover {
+    background-color: var(--accent-color);
+    color: white;
+}
+
+/* Participants progress styles */
+.participants-progress-container {
+    margin: 15px 0;
+    text-align: center;
+}
+
+.participants-progress {
+    margin-bottom: 10px;
+}
+
+.progress-bar {
+    height: 10px;
+    background-color: var(--progress-bg);
+    border-radius: 5px;
+    overflow: hidden;
+    margin-bottom: 5px;
+}
+
+.progress-fill {
+    height: 100%;
+    background-color: var(--progress-fill);
+    width: 50%; /* Default 1/2 */
+    transition: width 0.3s ease;
+}
+
+.progress-text {
+    font-size: 0.9rem;
+    color: var(--text-color);
+}
+
+.invite-prompt {
+    font-size: 0.9rem;
+    color: var(--accent-color);
+    margin-top: 5px;
+}
+
+/* Demo mode button and indicator */
+.demo-mode-btn {
+    margin-top: 10px;
+    margin-left: auto;
+    margin-right: auto;
+    margin-bottom: 0;
+    padding: 8px 15px;
+    background-color: var(--demo-color);
+    border: 1px solid var(--border-color);
+    color: var(--text-color);
+    cursor: pointer;
+    font-family: 'Georgia', serif;
+    transition: all 0.3s ease;
+    font-size: 0.9rem;
+    border-radius: 3px;
+    display: block;
+    width: auto;
+    min-width: 180px;
+    text-align: center;
+}
+
+.demo-mode-btn:hover {
+    background-color: var(--accent-color);
+    color: white;
+}
+
+.demo-mode-btn.active {
+    background-color: var(--demo-active);
+    border-color: var(--demo-active);
+    color: white;
+}
+
+.demo-indicator {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background-color: var(--demo-active);
+    color: white;
+    padding: 3px 8px;
+    font-size: 0.7rem;
+    font-weight: bold;
+    border-radius: 3px;
+    animation: pulse 2s infinite;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+    letter-spacing: 0.5px;
+}
+
+@keyframes pulse {
+    0% { opacity: 0.6; }
+    50% { opacity: 1; }
+    100% { opacity: 0.6; }
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .container {
+        padding: 25px;
+    }
+    
+    h1 {
+        font-size: 2rem;
+    }
+    
+    .description {
+        font-size: 1rem;
+    }
+    
+    .theme-toggle {
+        right: 15px;
+        top: 15px;
+    }
+}
+
 /* Mobile optimizations */
 @media (max-width: 480px) {
+    body {
+        padding: 10px;
+    }
+    
     header h1 {
         font-size: 1.6rem;
         margin: 10px 0;
@@ -165,7 +319,7 @@ footer {
     }
     
     .container {
-        padding: 15px;
+        padding: 20px;
     }
     
     .description {
@@ -175,6 +329,13 @@ footer {
     
     .button-container {
         margin: 20px 0;
+        width: 100%;
+    }
+    
+    .create-room-button {
+        padding: 12px 20px;
+        font-size: 1.1rem;
+        width: 100%;
     }
     
     .room-type-selection {
@@ -198,12 +359,44 @@ footer {
         font-size: 0.8rem;
     }
     
-    .create-room-button {
-        font-size: 1rem;
-        padding: 8px 16px;
+    .theme-toggle {
+        right: 10px;
+        top: 10px;
+        width: 35px;
+        height: 35px;
+        font-size: 1.2rem;
     }
     
-    footer .counter-container {
-        margin-bottom: 12px;
+    .participants-progress-container {
+        margin: 10px 0;
+    }
+    
+    .progress-bar {
+        height: 8px;
+    }
+    
+    .progress-text, .invite-prompt {
+        font-size: 0.8rem;
+    }
+}
+
+/* Improved touch targets for mobile */
+@media (max-width: 480px) {
+    input[type="radio"],
+    input[type="checkbox"] {
+        transform: scale(1.2);
+        margin-right: 10px;
+    }
+    
+    button, 
+    .create-room-button {
+        min-height: 44px;
+    }
+    
+    input[type="text"],
+    input[type="number"] {
+        font-size: 16px; /* Prevents zoom on iOS */
+        padding: 10px;
+        height: 44px;
     }
 } 
