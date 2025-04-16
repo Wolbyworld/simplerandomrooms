@@ -10,6 +10,9 @@
 <body>
     <div class="container room-container">
         <header>
+            <div class="home-link">
+                <a href="/" class="back-link">← Back to Home</a>
+            </div>
             <h1>Random Draw Room</h1>
             <div id="user-display">
                 <div class="user-count">
@@ -46,7 +49,7 @@
             {% else %}
                 <div class="action-box number-draw-box">
                     <h2>Number Draw</h2>
-                    <form id="number-params-form">
+                    <div id="number-params-form">
                         <div class="form-group">
                             <label for="min-value">Minimum Value:</label>
                             <input type="number" id="min-value" name="min_value" value="{{ room.min_value }}" required>
@@ -59,8 +62,7 @@
                             <input type="checkbox" id="with-replacement" name="with_replacement" {% if room.with_replacement %}checked{% endif %}>
                             <label for="with-replacement">With Replacement</label>
                         </div>
-                        <button type="submit">Update Parameters</button>
-                    </form>
+                    </div>
                     
                     <div class="number-result">
                         <div class="number-display" id="number-display">?</div>
@@ -111,7 +113,47 @@
         {% else %}
             const drawNumberBtn = document.getElementById('draw-number-btn');
             const numberDisplay = document.getElementById('number-display');
-            const numberParamsForm = document.getElementById('number-params-form');
+            const minValueInput = document.getElementById('min-value');
+            const maxValueInput = document.getElementById('max-value');
+            const withReplacementCheckbox = document.getElementById('with-replacement');
+            
+            // Auto-save parameters when they change
+            minValueInput.addEventListener('change', updateParameters);
+            maxValueInput.addEventListener('change', updateParameters);
+            withReplacementCheckbox.addEventListener('change', updateParameters);
+            
+            // Function to update parameters on the server
+            async function updateParameters() {
+                if (!isConnected) return;
+                
+                const minValue = parseInt(minValueInput.value);
+                const maxValue = parseInt(maxValueInput.value);
+                
+                // Validate parameters
+                if (minValue >= maxValue) {
+                    alert("Minimum value must be less than maximum value");
+                    return;
+                }
+                
+                const formData = new FormData();
+                formData.append('min_value', minValue);
+                formData.append('max_value', maxValue);
+                formData.append('with_replacement', withReplacementCheckbox.checked);
+                
+                try {
+                    const response = await fetch(`/room/${roomId}/update-params`, {
+                        method: 'POST',
+                        body: formData
+                    });
+                    
+                    if (!response.ok) {
+                        const error = await response.json();
+                        console.error(`Error: ${error.detail}`);
+                    }
+                } catch (error) {
+                    console.error('Error updating parameters:', error);
+                }
+            }
         {% endif %}
         
         // Set initial username
@@ -337,34 +379,12 @@
             // Handle number draw button
             drawNumberBtn.addEventListener('click', () => {
                 if (isConnected) {
-                    socket.send(JSON.stringify({
-                        type: 'number_draw'
-                    }));
-                }
-            });
-            
-            // Handle parameter update form
-            numberParamsForm.addEventListener('submit', async (event) => {
-                event.preventDefault();
-                
-                const formData = new FormData(numberParamsForm);
-                
-                try {
-                    const response = await fetch(`/room/${roomId}/update-params`, {
-                        method: 'POST',
-                        body: formData
+                    // First update parameters then perform the draw
+                    updateParameters().then(() => {
+                        socket.send(JSON.stringify({
+                            type: 'number_draw'
+                        }));
                     });
-                    
-                    if (response.ok) {
-                        const data = await response.json();
-                        console.log('Parameters updated:', data);
-                    } else {
-                        const error = await response.json();
-                        alert(`Error: ${error.detail}`);
-                    }
-                } catch (error) {
-                    console.error('Error updating parameters:', error);
-                    alert('Failed to update parameters');
                 }
             });
         {% endif %}
