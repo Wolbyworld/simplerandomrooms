@@ -133,4 +133,59 @@ footer {
 .room-type-option label {
     font-size: 1.1rem;
     cursor: pointer;
+}
+
+/* Mobile optimizations */
+@media (max-width: 480px) {
+    header h1 {
+        font-size: 1.6rem;
+        margin: 10px 0;
+    }
+    
+    .subtitle {
+        font-size: 0.9rem;
+    }
+    
+    .container {
+        padding: 15px;
+    }
+    
+    .description {
+        font-size: 0.95rem;
+        margin: 15px 0;
+    }
+    
+    .button-container {
+        margin: 20px 0;
+    }
+    
+    .room-type-selection {
+        flex-direction: column;
+        align-items: flex-start;
+        margin-bottom: 15px;
+    }
+    
+    .room-type-option {
+        margin: 5px 0;
+    }
+    
+    .counter-container {
+        flex-direction: column;
+        align-items: center;
+        margin-bottom: 10px;
+    }
+    
+    .counter {
+        margin: 5px 0;
+        font-size: 0.85rem;
+    }
+    
+    .create-room-button {
+        font-size: 1rem;
+        padding: 8px 16px;
+    }
+    
+    footer .counter-container {
+        margin-bottom: 12px;
+    }
 } 

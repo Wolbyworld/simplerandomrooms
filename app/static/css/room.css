@@ -98,15 +98,15 @@
 
 /* Action box */
 .action-box {
-    margin-bottom: 40px;
-    padding: 20px;
+    margin-bottom: 30px;
+    padding: 15px;
     border: 1px solid var(--border-color);
     background-color: #f8f8f0;
 }
 
 .action-box h2 {
     text-align: center;
-    margin-bottom: 20px;
+    margin-bottom: 15px;
     color: var(--accent-color);
 }
 
@@ -192,6 +192,7 @@
     padding: 8px;
     width: 100px;
     border: 1px solid var(--border-color);
+    text-align: center;
 }
 
 .checkbox-group {
@@ -205,6 +206,59 @@
 
 .checkbox-group label {
     width: auto;
+}
+
+/* Tooltip styles */
+.tooltip-trigger {
+    position: relative;
+    display: inline-block;
+    margin-left: 5px;
+    width: 14px;
+    height: 14px;
+    background-color: var(--border-color);
+    color: white;
+    border-radius: 50%;
+    text-align: center;
+    font-size: 0.7rem;
+    line-height: 14px;
+    cursor: help;
+    vertical-align: middle;
+}
+
+.tooltip-text {
+    visibility: hidden;
+    width: 200px;
+    background-color: rgba(0,0,0,0.8);
+    color: white;
+    text-align: center;
+    padding: 8px;
+    border-radius: 4px;
+    position: absolute;
+    z-index: 1;
+    bottom: 125%;
+    left: 50%;
+    transform: translateX(-50%);
+    opacity: 0;
+    transition: opacity 0.3s;
+    font-weight: normal;
+    font-size: 0.75rem;
+    pointer-events: none;
+}
+
+.tooltip-text::after {
+    content: "";
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    margin-left: -5px;
+    border-width: 5px;
+    border-style: solid;
+    border-color: rgba(0,0,0,0.8) transparent transparent transparent;
+}
+
+.tooltip-trigger:hover .tooltip-text {
+    visibility: visible;
+    opacity: 1;
 }
 
 #number-params-form button {
@@ -225,7 +279,7 @@
 .number-result {
     display: flex;
     justify-content: center;
-    margin: 30px 0;
+    margin: 15px 0;
     perspective: 1000px; /* 3D effect for the animation */
 }
 
@@ -243,6 +297,7 @@
     opacity: 0.7;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
     transition: all 0.2s ease;
+    text-shadow: 0 1px 1px rgba(0,0,0,0.1);
 }
 
 .number-display:before {
@@ -373,17 +428,148 @@
         align-items: flex-start;
     }
     
-    .name-box, .share-box {
-        flex-direction: column;
-    }
-    
     .form-group {
-        flex-direction: column;
-        align-items: flex-start;
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        flex-wrap: nowrap;
     }
     
     .form-group label {
-        margin-bottom: 5px;
+        margin-bottom: 0;
+        margin-right: 5px;
+        width: 130px;
+    }
+    
+    .form-group input[type="number"] {
+        width: 80px;
+    }
+    
+    .action-box {
+        margin-bottom: 20px;
+        padding: 10px;
+    }
+    
+    .number-result {
+        margin: 10px 0;
+    }
+    
+    .number-display {
+        width: 100px;
+        height: 100px;
+        font-size: 30px;
+    }
+    
+    .history-box {
+        margin-top: 20px;
+    }
+}
+
+/* Mobile optimization for iPhone and smaller devices */
+@media (max-width: 480px) {
+    header h1 {
+        font-size: 1.6rem;
+        margin: 10px 0;
+    }
+    
+    .room-container {
+        padding: 10px 15px 50px;
+    }
+    
+    .share-box {
+        margin: 12px 0;
+    }
+    
+    .share-box input {
+        font-size: 0.8rem;
+        padding: 6px;
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    
+    .share-box button {
+        padding: 6px 10px;
+        font-size: 0.85rem;
+        white-space: nowrap;
+    }
+    
+    .name-box {
+        margin-bottom: 15px;
+    }
+    
+    .name-box input {
+        font-size: 0.9rem;
+        padding: 6px;
+        min-width: 0;
+    }
+    
+    .name-box button {
+        padding: 6px 10px;
+        font-size: 0.85rem;
+        white-space: nowrap;
+    }
+    
+    /* Make the form more compact */
+    .form-group {
+        margin-bottom: 8px;
+        flex-wrap: nowrap;
+    }
+    
+    .form-group label {
+        font-size: 0.9rem;
+        width: 120px;
+        margin-right: 5px;
+    }
+    
+    .form-group input[type="number"] {
+        width: 70px;
+        padding: 4px 6px;
+        font-size: 0.9rem;
+        text-align: center;
+    }
+    
+    /* Reduce space around action box to prevent scrolling */
+    .action-box {
+        padding: 8px;
+        margin-bottom: 15px;
+    }
+    
+    .action-box h2 {
+        margin-bottom: 10px;
+        font-size: 1.3rem;
+    }
+    
+    /* Make number display more compact */
+    .number-display {
+        width: 90px;
+        height: 90px;
+        font-size: 28px;
+    }
+    
+    /* Reduce height of activity log to fit more UI above fold */
+    .activity-log {
+        height: 200px;
+    }
+    
+    /* Reduce padding in user pills */
+    .user-pill {
+        padding: 3px 8px;
+        font-size: 0.8rem;
+    }
+    
+    .tooltip-trigger {
+        width: 12px;
+        height: 12px;
+        font-size: 0.6rem;
+        line-height: 12px;
+        margin-left: 3px;
+    }
+    
+    .tooltip-text {
+        width: 160px;
+        font-size: 0.7rem;
+        padding: 6px;
     }
 }
 
@@ -404,4 +590,82 @@
 .back-link:hover {
     color: var(--text-color);
     transform: translateX(-3px);
+}
+
+/* Name box button and input enhancements */
+.name-box input:focus,
+.form-group input:focus {
+    outline: none;
+    border-color: var(--accent-color);
+    box-shadow: 0 0 0 2px rgba(155, 106, 108, 0.2);
+}
+
+.name-box button,
+#copy-url-btn,
+#flip-coin-btn, 
+#draw-number-btn {
+    transition: all 0.2s ease;
+}
+
+.name-box button:hover,
+#copy-url-btn:hover,
+#flip-coin-btn:hover:not(:disabled), 
+#draw-number-btn:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.name-box button:active,
+#copy-url-btn:active,
+#flip-coin-btn:active:not(:disabled), 
+#draw-number-btn:active:not(:disabled) {
+    transform: translateY(1px);
+    box-shadow: none;
+}
+
+/* Checkbox style enhancement */
+.checkbox-group input[type="checkbox"] {
+    appearance: none;
+    -webkit-appearance: none;
+    width: 16px;
+    height: 16px;
+    border: 1px solid var(--border-color);
+    border-radius: 3px;
+    margin-right: 10px;
+    position: relative;
+    cursor: pointer;
+    vertical-align: middle;
+    background-color: #f8f8f0;
+}
+
+.checkbox-group input[type="checkbox"]:checked {
+    background-color: var(--accent-color);
+    border-color: var(--accent-color);
+}
+
+.checkbox-group input[type="checkbox"]:checked::after {
+    content: "✓";
+    color: white;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 10px;
+}
+
+.checkbox-group input[type="checkbox"]:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(155, 106, 108, 0.2);
+}
+
+/* Mobile optimizations */
+@media (max-width: 480px) {
+    .checkbox-group input[type="checkbox"] {
+        width: 14px;
+        height: 14px;
+    }
+    
+    .checkbox-group input[type="checkbox"]:checked::after {
+        font-size: 9px;
+    }
 } 

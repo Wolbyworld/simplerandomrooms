@@ -3,9 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Random Draw Room</title>
+    <title>Random Draw Room - Vibecoded</title>
     <link rel="stylesheet" href="{{ url_for('static', path='css/styles.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', path='css/room.css') }}">
+    <link rel="icon" href="{{ url_for('static', path='favicon.svg') }}" type="image/svg+xml">
+    <link rel="alternate icon" href="{{ url_for('static', path='favicon.ico') }}" type="image/x-icon">
 </head>
 <body>
     <div class="container room-container">
@@ -51,16 +53,16 @@
                     <h2>Number Draw</h2>
                     <div id="number-params-form">
                         <div class="form-group">
-                            <label for="min-value">Minimum Value:</label>
+                            <label for="min-value">Min value:</label>
                             <input type="number" id="min-value" name="min_value" value="{{ room.min_value }}" required>
                         </div>
                         <div class="form-group">
-                            <label for="max-value">Maximum Value:</label>
+                            <label for="max-value">Max value:</label>
                             <input type="number" id="max-value" name="max_value" value="{{ room.max_value }}" required>
                         </div>
                         <div class="form-group checkbox-group">
                             <input type="checkbox" id="with-replacement" name="with_replacement" {% if room.with_replacement %}checked{% endif %}>
-                            <label for="with-replacement">With Replacement</label>
+                            <label for="with-replacement">Replacement <span class="tooltip-trigger">?<span class="tooltip-text">When enabled, numbers can be drawn multiple times. When disabled, each number can only be drawn once.</span></span></label>
                         </div>
                     </div>
                     
@@ -80,7 +82,9 @@
         </main>
 
         <footer>
-            <p>&copy; 2024 Random Draw Website</p>
+            <div class="container">
+                <p>Vibecoded in 2025</p>
+            </div>
         </footer>
     </div>
 
