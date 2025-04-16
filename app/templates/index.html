@@ -3,8 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Random Draw Website</title>
+    <title>Random Draw - Vibecoded</title>
     <link rel="stylesheet" href="{{ url_for('static', path='css/styles.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', path='css/counter.css') }}">
+    <link rel="icon" href="{{ url_for('static', path='favicon.svg') }}" type="image/svg+xml">
+    <link rel="alternate icon" href="{{ url_for('static', path='favicon.ico') }}" type="image/x-icon">
 </head>
 <body>
     <div class="container">
@@ -34,8 +37,55 @@
             </div>
         </main>
         <footer>
-            <p>&copy; 2024 Random Draw Website</p>
+            <div class="counter-container">
+                <div class="counter">
+                    <span id="roomsCounter">0</span> rooms created
+                </div>
+                <div class="counter">
+                    <span id="drawsCounter">0</span> draws performed
+                </div>
+            </div>
+            <div class="footer-text">
+                <p>Vibecoded in 2025</p>
+            </div>
         </footer>
     </div>
+
+    <script>
+        // Function to fetch statistics and update counters
+        async function updateStats() {
+            try {
+                const response = await fetch('/api/stats');
+                const data = await response.json();
+                
+                // Update room counter
+                updateCounter('roomsCounter', data.rooms_created);
+                
+                // Update draws counter
+                updateCounter('drawsCounter', data.draws_performed);
+            } catch (error) {
+                console.error('Error fetching stats:', error);
+            }
+        }
+        
+        // Function to update counter display
+        function updateCounter(elementId, value) {
+            const counterEl = document.getElementById(elementId);
+            counterEl.innerHTML = '';
+            
+            // Convert value to string and pad with leading zeros
+            const valueStr = String(value).padStart(6, '0');
+            
+            // Create digit elements
+            for (let i = 0; i < valueStr.length; i++) {
+                const digit = document.createElement('div');
+                digit.className = `stats-digit stats-digit-${valueStr[i]}`;
+                counterEl.appendChild(digit);
+            }
+        }
+        
+        // Fetch stats when page loads
+        document.addEventListener('DOMContentLoaded', updateStats);
+    </script>
 </body>
 </html> 
