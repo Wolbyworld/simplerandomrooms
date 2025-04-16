@@ -330,6 +330,9 @@
                     case 'random_action':
                         handleRandomAction(message);
                         break;
+                    case 'update_participants':
+                        updateParticipants(message);
+                        break;
                 }
             };
             
@@ -346,11 +349,17 @@
             };
         }
         
+        function updateParticipants(message) {
+            users = message.users || [];
+            updateUserDisplay();
+            updateParticipantProgress();
+        }
+        
         // Handle join events
         function handleJoin(message) {
-            users = message.users;
-            updateUsersList();
-            updateParticipantProgress();
+            console.log('Join event received:', message);
+            users = message.users || [];
+            updateUserDisplay();
             
             // Add to activity log
             if (message.user_id !== clientId) {
@@ -358,33 +367,38 @@
                     timestamp: message.timestamp,
                     action: 'join',
                     user_id: message.user_id,
-                    user_name: message.user_name
+                    user_name: message.user_name || 'User'
                 });
             }
         }
         
         // Handle user leave
         function handleLeave(message) {
-            users = message.users;
+            console.log('Leave event received:', message);
+            users = message.users || [];
             updateUserDisplay();
             
-            addLogEntry(`${message.username} left the room`);
+            if (message.username) {
+                addLogEntry(`${message.username} left the room`);
+            }
         }
         
         // Handle name change
         function handleNameChange(message) {
-            users = message.users;
+            console.log('Name change event received:', message);
+            users = message.users || [];
             updateUserDisplay();
             
             if (message.client_id !== clientId) {
-                addLogEntry(`${message.old_name} changed their name to ${message.new_name}`);
+                addLogEntry(`${message.old_name || 'User'} changed their name to ${message.new_name || 'User'}`);
             }
         }
         
         // Handle random action (coin flip or number draw)
         function handleRandomAction(message) {
+            console.log('Random action received:', message);
             // Add log entry
-            const actionText = `${message.username} performed ${message.action.toLowerCase()}: ${message.result}`;
+            const actionText = `${message.username || 'User'} performed ${message.action?.toLowerCase() || 'action'}: ${message.result || ''}`;
             addLogEntry(actionText);
             
             // Perform animation
@@ -400,18 +414,6 @@
             // Update count
             userCountElement.textContent = users.length;
             
-            // Update action button state
-            const actionButton = isCoinFlip ? flipCoinBtn : drawNumberBtn;
-            const warningElement = document.getElementById('not-enough-users');
-            
-            if (users.length >= 2) {
-                actionButton.disabled = false;
-                warningElement.style.display = 'none';
-            } else {
-                actionButton.disabled = true;
-                warningElement.style.display = 'block';
-            }
-            
             // Update user pills
             userPillsElement.innerHTML = '';
             users.forEach(user => {
@@ -420,9 +422,12 @@
                 if (user.client_id === clientId) {
                     pill.className += ' current-user';
                 }
-                pill.textContent = user.username;
+                pill.textContent = user.username || 'User';
                 userPillsElement.appendChild(pill);
             });
+            
+            // Update participant progress
+            updateParticipantProgress();
         }
         
         // Add log entry
@@ -543,7 +548,20 @@
         });
         
         // Connect to WebSocket when page loads
-        connectWebSocket();
+        window.addEventListener('DOMContentLoaded', function() {
+            console.log('Connecting to WebSocket...');
+            connectWebSocket();
+            
+            // Send a heartbeat every 30 seconds to keep the connection alive
+            setInterval(function() {
+                if (socket && socket.readyState === WebSocket.OPEN) {
+                    socket.send(JSON.stringify({
+                        type: 'heartbeat',
+                        client_id: clientId
+                    }));
+                }
+            }, 30000);
+        });
         
         // Function to fetch statistics and update counters
         async function updateStats() {
