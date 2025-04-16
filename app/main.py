@@ -1,12 +1,13 @@
 from fastapi import FastAPI, Request
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 import os
 from pathlib import Path
 
 # Import database functions and routers
 from app.models.database import create_tables
-from app.routers import rooms, websocket
+from app.routers import rooms, websocket, stats
 
 # Create the FastAPI app
 app = FastAPI(title="Random Draw Website")
@@ -17,6 +18,11 @@ templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
 
 # Mount static files
 app.mount("/static", StaticFiles(directory=str(BASE_DIR / "static")), name="static")
+
+# Define favicon endpoints
+@app.get("/favicon.ico")
+async def favicon():
+    return FileResponse(str(BASE_DIR / "static" / "favicon.ico"))
 
 # Define root endpoint
 @app.get("/")
@@ -31,6 +37,7 @@ async def health():
 # Include routers
 app.include_router(rooms.router)
 app.include_router(websocket.router)
+app.include_router(stats.router)
 
 # Create database tables on startup
 @app.on_event("startup")
