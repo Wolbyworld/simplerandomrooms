@@ -29,12 +29,6 @@
             <button id="copy-url-btn">Copy URL</button>
         </div>
         
-        <div class="name-box">
-            <label for="username">Your Name:</label>
-            <input type="text" id="username" placeholder="Enter your name">
-            <button id="update-name-btn">Update</button>
-        </div>
-
         <main>
             {% if room.is_coin_flip %}
                 <div class="action-box coin-flip-box">
@@ -95,7 +89,6 @@
         const clientId = Date.now().toString() + Math.random().toString(36).substring(2, 15);
         
         // Initialize state variables
-        let username = `User ${Math.floor(Math.random() * 1000)}`;
         let isConnected = false;
         let users = [];
         let page = 0;
@@ -105,8 +98,6 @@
         // DOM elements
         const userCountElement = document.getElementById('user-count-value');
         const userPillsElement = document.getElementById('user-pills');
-        const usernameInput = document.getElementById('username');
-        const updateNameBtn = document.getElementById('update-name-btn');
         const activityLog = document.getElementById('activity-log');
         const copyUrlBtn = document.getElementById('copy-url-btn');
         const roomUrlInput = document.getElementById('room-url');
@@ -159,9 +150,6 @@
                 }
             }
         {% endif %}
-        
-        // Set initial username
-        usernameInput.value = username;
         
         // WebSocket connection
         const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
@@ -336,21 +324,6 @@
             setTimeout(() => {
                 copyUrlBtn.textContent = 'Copy URL';
             }, 2000);
-        });
-        
-        // Update username
-        updateNameBtn.addEventListener('click', () => {
-            const newName = usernameInput.value.trim();
-            if (newName && newName !== username) {
-                username = newName;
-                
-                if (isConnected) {
-                    socket.send(JSON.stringify({
-                        type: 'name_change',
-                        username: username
-                    }));
-                }
-            }
         });
         
         {% if room.is_coin_flip %}

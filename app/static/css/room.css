@@ -40,7 +40,7 @@
 .share-box {
     display: flex;
     gap: 10px;
-    margin: 20px 0;
+    margin: 20px 0 30px;
 }
 
 .share-box input {
@@ -60,38 +60,6 @@
 }
 
 .share-box button:hover {
-    background-color: var(--accent-color);
-    color: white;
-}
-
-/* Name box */
-.name-box {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin-bottom: 30px;
-}
-
-.name-box label {
-    font-weight: bold;
-}
-
-.name-box input {
-    flex: 1;
-    padding: 8px 12px;
-    border: 1px solid var(--border-color);
-    background-color: #f8f8f0;
-}
-
-.name-box button {
-    padding: 8px 15px;
-    background-color: var(--button-color);
-    border: 1px solid var(--border-color);
-    cursor: pointer;
-    transition: all 0.3s ease;
-}
-
-.name-box button:hover {
     background-color: var(--accent-color);
     color: white;
 }
@@ -668,4 +636,15 @@
     .checkbox-group input[type="checkbox"]:checked::after {
         font-size: 9px;
     }
+}
+
+/* Input highlighting for feedback */
+.highlight {
+    animation: highlight-pulse 1s ease;
+}
+
+@keyframes highlight-pulse {
+    0% { border-color: var(--border-color); }
+    50% { border-color: var(--accent-color); box-shadow: 0 0 5px rgba(155, 106, 108, 0.5); }
+    100% { border-color: var(--border-color); }
 } 
