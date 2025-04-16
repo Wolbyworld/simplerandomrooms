@@ -29,13 +29,19 @@
                 <form action="/create-room" method="post">
                     <div class="room-type-selection">
                         <div class="room-type-option">
-                            <input type="radio" id="number-draw" name="is_coin_flip" value="false" checked>
+                            <input type="radio" id="number-draw" name="room_type" value="number" checked>
                             <label for="number-draw">Number Draw</label>
                         </div>
                         <div class="room-type-option">
-                            <input type="radio" id="coin-flip" name="is_coin_flip" value="true">
+                            <input type="radio" id="list-draw" name="room_type" value="list">
+                            <label for="list-draw">List Draw</label>
+                        </div>
+                        <div class="room-type-option">
+                            <input type="radio" id="coin-flip" name="room_type" value="coin">
                             <label for="coin-flip">Coin Flip</label>
                         </div>
+                        <input type="hidden" id="is_coin_flip" name="is_coin_flip" value="false">
+                        <input type="hidden" id="is_list_draw" name="is_list_draw" value="false">
                     </div>
                     <button type="submit" class="create-room-button">Create Room</button>
                 </form>
@@ -57,6 +63,34 @@
     </div>
 
     <script>
+        // Room type selection handler
+        const roomTypeRadios = document.querySelectorAll('input[name="room_type"]');
+        const isCoinFlipField = document.getElementById('is_coin_flip');
+        const isListDrawField = document.getElementById('is_list_draw');
+        
+        function updateHiddenFields() {
+            const selectedValue = document.querySelector('input[name="room_type"]:checked').value;
+            
+            if (selectedValue === 'coin') {
+                isCoinFlipField.value = 'true';
+                isListDrawField.value = 'false';
+            } else if (selectedValue === 'list') {
+                isCoinFlipField.value = 'false';
+                isListDrawField.value = 'true';
+            } else { // number
+                isCoinFlipField.value = 'false';
+                isListDrawField.value = 'false';
+            }
+        }
+        
+        // Add event listeners to radio buttons
+        roomTypeRadios.forEach(radio => {
+            radio.addEventListener('change', updateHiddenFields);
+        });
+        
+        // Initialize the hidden fields
+        updateHiddenFields();
+        
         // Function to fetch statistics and update counters
         async function updateStats() {
             try {

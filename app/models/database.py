@@ -38,6 +38,7 @@ class Room(Base):
     id = Column(String, primary_key=True, index=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     is_coin_flip = Column(Boolean, default=False)
+    is_list_draw = Column(Boolean, default=False)
     min_value = Column(Integer, default=1)
     max_value = Column(Integer, default=100)
     with_replacement = Column(Boolean, default=True)

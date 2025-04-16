@@ -54,6 +54,36 @@
                     <button id="demo-mode-btn" class="demo-mode-btn">Quick Start (Demo Mode)</button>
                     <p id="not-enough-users" class="warning">At least 2 participants required</p>
                 </div>
+            {% elif room.is_list_draw %}
+                <div class="action-box list-draw-box">
+                    <h2>List Draw</h2>
+                    <div id="list-params-form">
+                        <div class="form-group textarea-group">
+                            <label for="list-items">Enter items (one per line):</label>
+                            <textarea id="list-items" name="list_items" rows="6" placeholder="Item 1&#10;Item 2&#10;Item 3" required></textarea>
+                        </div>
+                        <div class="form-group checkbox-group">
+                            <input type="checkbox" id="with-replacement" name="with_replacement" {% if room.with_replacement %}checked{% endif %}>
+                            <label for="with-replacement">Replacement <span class="tooltip-trigger">?<span class="tooltip-text">When enabled, items can be drawn multiple times. When disabled, each item can only be drawn once.</span></span></label>
+                        </div>
+                    </div>
+                    
+                    <div class="list-result">
+                        <div class="list-display" id="list-display">?</div>
+                    </div>
+                    
+                    <div class="participants-progress-container">
+                        <div class="participants-progress">
+                            <div class="progress-bar"><div id="progress-fill" class="progress-fill"></div></div>
+                            <div class="progress-text"><span id="current-participants">1</span>/2 participants</div>
+                        </div>
+                        <p class="invite-prompt">Share the URL above to invite friends!</p>
+                    </div>
+                    
+                    <button id="draw-list-btn" disabled>Draw Item</button>
+                    <button id="demo-mode-btn" class="demo-mode-btn">Quick Start (Demo Mode)</button>
+                    <p id="not-enough-users" class="warning">At least 2 participants required</p>
+                </div>
             {% else %}
                 <div class="action-box number-draw-box">
                     <h2>Number Draw</h2>
@@ -115,6 +145,7 @@
         // Store room data
         const roomId = "{{ room_id }}";
         const isCoinFlip = {% if room.is_coin_flip %}true{% else %}false{% endif %};
+        const isListDraw = {% if room.is_list_draw %}true{% else %}false{% endif %};
         const clientId = Date.now().toString() + Math.random().toString(36).substring(2, 15);
         
         // Initialize state variables
@@ -229,7 +260,7 @@
         
         // Function to update button states based on participant count or demo mode
         function updateButtonStates() {
-            const buttons = isCoinFlip ? [flipCoinBtn] : [drawNumberBtn];
+            const buttons = isCoinFlip ? [flipCoinBtn] : isListDraw ? [drawListBtn] : [drawNumberBtn];
             
             buttons.forEach(btn => {
                 if (isDemoMode || users.length >= 2) {
@@ -245,6 +276,70 @@
         {% if room.is_coin_flip %}
             const flipCoinBtn = document.getElementById('flip-coin-btn');
             const coinElement = document.getElementById('coin');
+        {% elif room.is_list_draw %}
+            const drawListBtn = document.getElementById('draw-list-btn');
+            const listDisplay = document.getElementById('list-display');
+            const listItemsTextarea = document.getElementById('list-items');
+            const withReplacementCheckbox = document.getElementById('with-replacement');
+            
+            // List items array to track drawn items for non-replacement mode
+            let listItems = [];
+            let drawnItems = [];
+            
+            // Function to update list items from textarea
+            function updateListItems() {
+                const text = listItemsTextarea.value.trim();
+                // Split by newline and filter out empty items
+                listItems = text.split('\n').filter(item => item.trim() !== '');
+                // Reset drawn items
+                drawnItems = [];
+            }
+            
+            // Initial update
+            listItemsTextarea.addEventListener('change', updateListItems);
+            
+            // Send list items update to all clients
+            listItemsTextarea.addEventListener('change', function() {
+                if (isConnected && listItems.length > 0) {
+                    socket.send(JSON.stringify({
+                        type: 'list_draw',
+                        list_items: listItems,
+                        with_replacement: withReplacementCheckbox.checked,
+                        drawn_items: drawnItems,
+                        action: 'update_only' // Just update the list, don't perform a draw
+                    }));
+                }
+            });
+            
+            // List draw animation
+            function performListDrawAnimation(result) {
+                listDisplay.className = 'list-display';
+                void listDisplay.offsetWidth; // Force reflow
+                
+                listDisplay.textContent = result;
+                listDisplay.className = 'list-display list-reveal';
+            }
+            
+            // Handle list draw button
+            drawListBtn.addEventListener('click', () => {
+                if (isConnected) {
+                    // Update list items first
+                    updateListItems();
+                    
+                    if (listItems.length === 0) {
+                        alert('Please enter at least one item in the list');
+                        return;
+                    }
+                    
+                    // Send draw request containing list items and parameters
+                    socket.send(JSON.stringify({
+                        type: 'list_draw',
+                        list_items: listItems,
+                        with_replacement: withReplacementCheckbox.checked,
+                        drawn_items: drawnItems
+                    }));
+                }
+            });
         {% else %}
             const drawNumberBtn = document.getElementById('draw-number-btn');
             const numberDisplay = document.getElementById('number-display');
@@ -342,6 +437,12 @@
                         break;
                     case 'parameter_update':
                         handleParameterUpdate(message);
+                        break;
+                    case 'list_items_update':
+                        handleListItemsUpdate(message);
+                        break;
+                    case 'drawn_items_update':
+                        handleDrawnItemsUpdate(message);
                         break;
                 }
             };
@@ -446,7 +547,9 @@
             // Perform animation
             if (message.action === 'Coin Flip' && isCoinFlip) {
                 performCoinFlipAnimation(message.result);
-            } else if (message.action === 'Number Draw' && !isCoinFlip) {
+            } else if (message.action === 'List Draw' && isListDraw) {
+                performListDrawAnimation(message.result);
+            } else if (message.action === 'Number Draw' && !isCoinFlip && !isListDraw) {
                 performNumberDrawAnimation(message.result);
             }
         }
@@ -500,7 +603,7 @@
             
             try {
                 // Update form values if in number draw mode and elements exist
-                if (!isCoinFlip) {
+                if (!isCoinFlip && !isListDraw) {
                     // These elements only exist in number draw mode
                     const minInput = document.getElementById('min-value');
                     const maxInput = document.getElementById('max-value');
@@ -521,6 +624,65 @@
             
             // Add to the document
             document.body.appendChild(notification);
+        }
+        
+        // Handle list items update from other clients
+        function handleListItemsUpdate(message) {
+            // Skip if this is our own update or not in list draw mode
+            if (message.client_id === clientId || !isListDraw) return;
+            
+            console.log('List items update received:', message);
+            
+            // Update the list items textarea if it exists
+            if (listItemsTextarea) {
+                // Update the textarea only if it's empty or user hasn't interacted with it
+                if (listItemsTextarea.value.trim() === '') {
+                    listItemsTextarea.value = message.list_items.join('\n');
+                    // Also update our local list items array
+                    listItems = message.list_items;
+                    
+                    // Add notification
+                    const notification = document.createElement('div');
+                    notification.className = 'parameter-update-notification';
+                    notification.innerHTML = `
+                        <div class="notification-content">
+                            <strong>${message.username}</strong> updated the list items.
+                        </div>
+                        <button class="notification-close">×</button>
+                    `;
+                    
+                    // Add close button functionality
+                    const closeBtn = notification.querySelector('.notification-close');
+                    closeBtn.addEventListener('click', () => { notification.remove(); });
+                    
+                    // Auto-dismiss after 5 seconds
+                    setTimeout(() => {
+                        if (notification.parentNode) {
+                            notification.classList.add('fade-out');
+                            setTimeout(() => notification.remove(), 500);
+                        }
+                    }, 5000);
+                    
+                    // Add to the document
+                    document.body.appendChild(notification);
+                    
+                    // Add to activity log
+                    addLogEntry(`${message.username} updated the list items`);
+                } else {
+                    console.log('Not updating textarea as user has entered custom items');
+                }
+            }
+        }
+        
+        // Handle drawn items update
+        function handleDrawnItemsUpdate(message) {
+            // Skip if not in list draw mode
+            if (!isListDraw) return;
+            
+            console.log('Drawn items update received:', message);
+            
+            // Update our local drawn items array
+            drawnItems = message.drawn_items;
         }
         
         // Update user display
@@ -628,6 +790,8 @@
                     }));
                 }
             });
+        {% elif room.is_list_draw %}
+            // List draw animation is handled in the section above
         {% else %}
             // Number draw animation
             function performNumberDrawAnimation(result) {

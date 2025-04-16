@@ -333,6 +333,73 @@ async def websocket_endpoint(
                         "max_value": max_val,
                         "with_replacement": with_replacement
                     })
+                    
+            elif message["type"] == "list_draw":
+                # Get list items and replacement setting from message
+                list_items = message.get("list_items", [])
+                with_replacement = message.get("with_replacement", room.with_replacement)
+                drawn_items = message.get("drawn_items", [])
+                update_only = message.get("action") == "update_only"
+                
+                # Check if replacement setting differs from current room setting
+                if with_replacement != room.with_replacement:
+                    # Log parameter change
+                    logger.info(f"Replacement setting changed in room {room_id} by client {client_id}: {with_replacement}")
+                    
+                    # Update room parameter in database
+                    room.with_replacement = with_replacement
+                    db.commit()
+                    
+                    # Broadcast the parameter update
+                    await manager.broadcast_parameter_update(room_id, client_id, {
+                        "with_replacement": with_replacement
+                    })
+                
+                # Broadcast list items to all participants so everyone has the same list
+                logger.info(f"Broadcasting list items to room {room_id}: {len(list_items)} items")
+                await manager.broadcast_to_room(room_id, {
+                    "type": "list_items_update",
+                    "client_id": client_id,
+                    "username": manager.user_names[room_id].get(client_id, "Unknown user"),
+                    "list_items": list_items
+                })
+                
+                # If this is just an update, don't perform a draw
+                if update_only:
+                    logger.info(f"Update only, skipping draw")
+                    continue
+                
+                # Handle draw with/without replacement
+                if not list_items:
+                    # No items in list, return error action
+                    action = {"action": "List Draw", "result": "Error: Empty list"}
+                else:
+                    if with_replacement:
+                        # With replacement: draw any item
+                        result = random.choice(list_items)
+                    else:
+                        # Without replacement: exclude already drawn items
+                        available_items = [item for item in list_items if item not in drawn_items]
+                        
+                        if not available_items:
+                            # All items have been drawn
+                            result = "All items drawn"
+                        else:
+                            result = random.choice(available_items)
+                            # Add to drawn items list
+                            drawn_items.append(result)
+                    
+                    action = {"action": "List Draw", "result": result}
+                
+                # Broadcast the random action to all clients
+                await manager.broadcast_random_action(room_id, client_id, action, db)
+                
+                # If drawn with no replacement, broadcast drawn items list to keep it in sync
+                if not with_replacement and result != "All items drawn" and result != "Error: Empty list":
+                    await manager.broadcast_to_room(room_id, {
+                        "type": "drawn_items_update",
+                        "drawn_items": drawn_items
+                    })
     
     except WebSocketDisconnect:
         # Handle disconnection

@@ -207,6 +207,54 @@
     width: auto;
 }
 
+/* List draw styles */
+.textarea-group {
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+.textarea-group label {
+    width: 100%;
+    margin-bottom: 8px;
+}
+
+.textarea-group textarea {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid var(--border-color);
+    background-color: var(--input-bg);
+    color: var(--text-color);
+    resize: vertical;
+    font-family: inherit;
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.list-result {
+    display: flex;
+    justify-content: center;
+    margin: 20px 0;
+}
+
+.list-display {
+    background-color: var(--button-color);
+    color: var(--text-color);
+    border: 1px solid var(--border-color);
+    border-radius: 5px;
+    font-size: 24px;
+    padding: 15px 30px;
+    min-width: 100px;
+    text-align: center;
+    opacity: 0;
+    transform: scale(0.8);
+    transition: transform 0.3s ease, opacity 0.3s ease;
+}
+
+.list-display.list-reveal {
+    opacity: 1;
+    transform: scale(1);
+    animation: highlight-pulse 1s;
+}
+
 /* Tooltip styles */
 .tooltip-trigger {
     position: relative;
@@ -285,8 +333,12 @@
     transition: background-color 0.3s ease, color 0.3s ease;
 }
 
+.number-display.number-reveal {
+    animation: highlight-pulse 1s;
+}
+
 /* Draw and flip buttons */
-#flip-coin-btn, #draw-number-btn {
+#flip-coin-btn, #draw-number-btn, #draw-list-btn {
     background-color: var(--button-color);
     color: var(--text-color);
     border: 2px solid var(--border-color);
@@ -299,12 +351,12 @@
     transition: all 0.3s ease;
 }
 
-#flip-coin-btn:hover, #draw-number-btn:hover {
+#flip-coin-btn:hover, #draw-number-btn:hover, #draw-list-btn:hover {
     background-color: var(--accent-color);
     color: white;
 }
 
-#flip-coin-btn:disabled, #draw-number-btn:disabled {
+#flip-coin-btn:disabled, #draw-number-btn:disabled, #draw-list-btn:disabled {
     background-color: var(--disabled-color);
     cursor: not-allowed;
     opacity: 0.7;
@@ -481,7 +533,7 @@
         padding: 6px;
     }
     
-    #flip-coin-btn, #draw-number-btn {
+    #flip-coin-btn, #draw-number-btn, #draw-list-btn {
         padding: 10px 20px;
         font-size: 1rem;
     }

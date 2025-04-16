@@ -18,6 +18,7 @@ templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
 @router.post("/create-room", response_class=RedirectResponse, status_code=303)
 async def create_room(
     is_coin_flip: bool = Form(False), 
+    is_list_draw: bool = Form(False),
     db: Session = Depends(get_db)
 ):
     # Generate a unique room ID
@@ -27,6 +28,7 @@ async def create_room(
     room = Room(
         id=room_id,
         is_coin_flip=is_coin_flip,
+        is_list_draw=is_list_draw,
     )
     
     # Add to database
