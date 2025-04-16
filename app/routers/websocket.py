@@ -144,6 +144,23 @@ class ConnectionManager:
                     "users": self.get_users(room_id)
                 }
             )
+    
+    async def broadcast_parameter_update(self, room_id: str, client_id: str, parameters: dict):
+        """Broadcast parameter updates to all users in the room"""
+        if room_id in self.active_rooms:
+            # Get user name
+            username = self.user_names[room_id].get(client_id, "Unknown user")
+            
+            # Prepare message
+            message = {
+                "type": "parameter_update",
+                "client_id": client_id,
+                "username": username,
+                "parameters": parameters
+            }
+            
+            # Broadcast to room
+            await self.broadcast_to_room(room_id, message)
 
 # Create connection manager
 manager = ConnectionManager()
@@ -185,14 +202,37 @@ async def websocket_endpoint(
                 await manager.broadcast_random_action(room_id, client_id, action, db)
             
             elif message["type"] == "number_draw":
-                # Perform number draw
-                min_val = room.min_value
-                max_val = room.max_value
+                # Get parameters from message or use room defaults
+                min_val = message.get("min_value", room.min_value)
+                max_val = message.get("max_value", room.max_value)
+                with_replacement = message.get("with_replacement", room.with_replacement)
+                
+                # Check if parameters differ from current room settings
+                params_changed = (min_val != room.min_value or 
+                                 max_val != room.max_value or 
+                                 with_replacement != room.with_replacement)
+                
+                if params_changed:
+                    # Update room parameters in database
+                    room.min_value = min_val
+                    room.max_value = max_val
+                    room.with_replacement = with_replacement
+                    db.commit()
                 
                 # Get result and format the action
                 result = str(random.randint(min_val, max_val))
                 action = {"action": "Number Draw", "result": result}
+                
+                # Broadcast the random action to all clients
                 await manager.broadcast_random_action(room_id, client_id, action, db)
+                
+                # If parameters changed, broadcast the update
+                if params_changed:
+                    await manager.broadcast_parameter_update(room_id, client_id, {
+                        "min_value": min_val,
+                        "max_value": max_val,
+                        "with_replacement": with_replacement
+                    })
     
     except WebSocketDisconnect:
         # Handle disconnection

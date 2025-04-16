@@ -333,6 +333,9 @@
                     case 'update_participants':
                         updateParticipants(message);
                         break;
+                    case 'parameter_update':
+                        handleParameterUpdate(message);
+                        break;
                 }
             };
             
@@ -407,6 +410,65 @@
             } else if (message.action === 'Number Draw' && !isCoinFlip) {
                 performNumberDrawAnimation(message.result);
             }
+        }
+        
+        // Handle parameter update event
+        function handleParameterUpdate(message) {
+            console.log('Parameter update received:', message);
+            
+            // Ignore if this is our own update
+            if (message.client_id === clientId) {
+                return;
+            }
+            
+            const params = message.parameters;
+            if (!params) return;
+            
+            // Create a notification element
+            const notification = document.createElement('div');
+            notification.className = 'parameter-update-notification';
+            notification.innerHTML = `
+                <div class="notification-content">
+                    <strong>${message.username}</strong> changed draw settings:
+                    <br>Range: ${params.min_value} - ${params.max_value}
+                    <br>Replacement: ${params.with_replacement ? 'Yes' : 'No'}
+                </div>
+                <button class="notification-close">×</button>
+            `;
+            
+            // Add close button functionality
+            const closeBtn = notification.querySelector('.notification-close');
+            closeBtn.addEventListener('click', () => {
+                notification.remove();
+            });
+            
+            // Auto-dismiss after 8 seconds
+            setTimeout(() => {
+                if (notification.parentNode) {
+                    notification.classList.add('fade-out');
+                    setTimeout(() => notification.remove(), 500);
+                }
+            }, 8000);
+            
+            // Add log entry
+            addLogEntry(`${message.username} changed draw settings to ${params.min_value}-${params.max_value} (replacement: ${params.with_replacement ? 'Yes' : 'No'})`);
+            
+            // Update form values if in number draw mode and elements exist
+            if (!isCoinFlip) {
+                // These elements only exist in number draw mode
+                const minInput = document.getElementById('min-value');
+                const maxInput = document.getElementById('max-value');
+                const replaceCheckbox = document.getElementById('with-replacement');
+                
+                if (minInput && maxInput && replaceCheckbox) {
+                    minInput.value = params.min_value;
+                    maxInput.value = params.max_value;
+                    replaceCheckbox.checked = params.with_replacement;
+                }
+            }
+            
+            // Add to the document
+            document.body.appendChild(notification);
         }
         
         // Update user display
@@ -527,15 +589,13 @@
             // Handle number draw button
             drawNumberBtn.addEventListener('click', () => {
                 if (isConnected) {
-                    // First update parameters then perform the draw
-                    updateParameters().then(() => {
-                        socket.send(JSON.stringify({
-                            type: 'number_draw',
-                            with_replacement: withReplacementCheckbox.checked,
-                            min_value: parseInt(minValueInput.value),
-                            max_value: parseInt(maxValueInput.value)
-                        }));
-                    });
+                    // Send only one message with draw request containing parameters
+                    socket.send(JSON.stringify({
+                        type: 'number_draw',
+                        min_value: parseInt(minValueInput.value),
+                        max_value: parseInt(maxValueInput.value),
+                        with_replacement: withReplacementCheckbox.checked
+                    }));
                 }
             });
         {% endif %}
