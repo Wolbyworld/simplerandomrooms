@@ -1,4 +1,4 @@
-name = "random-draw-worker"
+name = "randomrooms"
 main = "worker.js"
 compatibility_date = "2025-02-11"
 workers_dev = true
@@ -10,4 +10,4 @@ bindings = [
 
 [[migrations]]
 tag = "v1"
-new_classes = ["RoomDurableObject"]
+new_sqlite_classes = ["RoomDurableObject"]
