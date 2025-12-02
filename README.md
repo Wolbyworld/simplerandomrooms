@@ -16,7 +16,7 @@ Lightweight real-time “draw room” built for Cloudflare Workers free tier. Us
 
 ## Quick start (local dev)
 ```sh
-wrangler dev --local
+wrangler dev --local  
 # Open the printed URL, create a room, copy the link, join from another tab, and test coin/number/list draws.
 ```
 
