@@ -2,6 +2,7 @@ name = "randomrooms"
 main = "worker.js"
 compatibility_date = "2025-02-11"
 workers_dev = true
+routes = ["randomrooms.info/*", "www.randomrooms.info/*"]
 
 [durable_objects]
 bindings = [
