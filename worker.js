@@ -1,5 +1,15 @@
 // Minimal Cloudflare Worker + Durable Object implementation for shared draw rooms.
 // Works on free Workers plan (no external DB, state lives in Durable Object).
+
+const faviconSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <rect width="100" height="100" rx="15" fill="#000"/>
+  <circle cx="30" cy="30" r="8" fill="#fff"/>
+  <circle cx="50" cy="50" r="8" fill="#fff"/>
+  <circle cx="70" cy="30" r="8" fill="#fff"/>
+  <circle cx="30" cy="70" r="8" fill="#fff"/>
+  <circle cx="70" cy="70" r="8" fill="#fff"/>
+</svg>`;
+
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
@@ -7,6 +17,14 @@ export default {
     // Health check
     if (url.pathname === "/health") {
       return new Response("ok");
+    }
+
+    // Serve favicon
+    if (url.pathname === "/favicon.svg") {
+      return new Response(faviconSvg, {
+        status: 200,
+        headers: { "content-type": "image/svg+xml" },
+      });
     }
 
     // Create a new room
@@ -300,6 +318,7 @@ const renderApp = (roomId) => /* html */ `<!doctype html>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Quick Draw</title>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
