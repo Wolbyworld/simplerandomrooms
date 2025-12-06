@@ -321,7 +321,7 @@ const renderApp = (roomId) => /* html */ `<!doctype html>
   <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
     :root {
       color-scheme: light;
@@ -340,6 +340,128 @@ const renderApp = (roomId) => /* html */ `<!doctype html>
       --shadow-sm: 0 1px 3px rgba(0,0,0,0.08);
       --shadow-md: 0 4px 12px rgba(0,0,0,0.1);
       --shadow-lg: 0 8px 24px rgba(0,0,0,0.12);
+      --noise: radial-gradient(circle at 10% 20%, rgba(0,0,0,0.04) 0, transparent 18%), radial-gradient(circle at 80% 0, rgba(0,0,0,0.05) 0, transparent 20%);
+    }
+
+    /* Neo brutalism theme overrides */
+    body.theme-neo {
+      --bg-primary: #fdf8ed;
+      --bg-secondary: #fff9d6;
+      --bg-card: #fffbef;
+      --bg-elevated: #ffffff;
+      --accent-primary: #141b8f;
+      --accent-secondary: #ff3b30;
+      --text-primary: #0b1229;
+      --text-secondary: #233159;
+      --text-muted: #4b5563;
+      --border-light: #0b1229;
+      --border-medium: #0b1229;
+      --border-strong: #0b1229;
+      --shadow-sm: 6px 6px 0 #0b1229;
+      --shadow-md: 10px 10px 0 #0b1229;
+      --shadow-lg: 14px 14px 0 #0b1229;
+      background: var(--bg-primary);
+      background-image:
+        linear-gradient(135deg, rgba(255, 169, 64, 0.2), rgba(255, 76, 41, 0.08)),
+        repeating-linear-gradient(45deg, transparent, transparent 14px, rgba(0,0,0,0.05) 14px, rgba(0,0,0,0.05) 28px),
+        var(--noise);
+      font-family: "Space Grotesk", "Inter", system-ui, -apple-system, sans-serif;
+      letter-spacing: -0.01em;
+    }
+    body.theme-neo h1,
+    body.theme-neo h2 {
+      font-family: "Space Grotesk", "Inter", system-ui, -apple-system, sans-serif;
+      text-transform: uppercase;
+    }
+    body.theme-neo .header-card {
+      border: 3px solid var(--border-strong);
+      box-shadow: var(--shadow-md);
+      padding: 36px 20px 26px;
+      background: linear-gradient(135deg, #fffbe6, #ffe4c4);
+      gap: 12px;
+    }
+    body.theme-neo .header-content {
+      align-items: center;
+    }
+    body.theme-neo .badge {
+      background: #0b1229;
+      color: #fef08a;
+      border: 2px solid #0b1229;
+      box-shadow: 6px 6px 0 #f97316;
+    }
+    body.theme-neo button {
+      border-width: 3px;
+      box-shadow: 6px 6px 0 #0b1229;
+      transform: translate(-2px, -2px);
+      transition: transform 0.12s ease, box-shadow 0.12s ease, background 0.12s ease;
+      background: #0b1229;
+      color: #fef08a;
+      line-height: 1.1;
+    }
+    body.theme-neo button:hover {
+      transform: translate(0,0);
+      box-shadow: 8px 8px 0 #0b1229;
+      background: #fef08a;
+      color: #0b1229;
+    }
+    body.theme-neo button.secondary {
+      background: #fef08a;
+      color: #0b1229;
+      border-color: #0b1229;
+    }
+    body.theme-neo button.secondary:hover {
+      background: #0b1229;
+      color: #fef08a;
+    }
+    body.theme-neo .panel,
+    body.theme-neo .card {
+      border: 3px solid var(--border-strong);
+      box-shadow: var(--shadow-sm);
+      background: var(--bg-card);
+    }
+    body.theme-neo input,
+    body.theme-neo textarea {
+      border: 3px solid var(--border-strong);
+      background: #fff;
+      box-shadow: 4px 4px 0 #0b1229;
+    }
+    body.theme-neo .floating-result {
+      border-width: 4px;
+      box-shadow: var(--shadow-lg);
+      transform: rotate(-1deg);
+      background: #fef3c7;
+      width: 360px;
+    }
+    body.theme-neo .result-value {
+      text-transform: uppercase;
+      letter-spacing: 0.015em;
+      font-size: clamp(38px, 7vw, 58px);
+    }
+    body.theme-neo .presence-bar {
+      border-top: 3px solid var(--border-strong);
+      background: #fef08a;
+      box-shadow: 0 -8px 0 #0b1229;
+    }
+    body.theme-neo .log-section {
+      border-top: 3px solid var(--border-strong);
+    }
+    body.theme-neo #log {
+      border: 3px solid var(--border-strong);
+      box-shadow: 4px 4px 0 #0b1229;
+      background: #fff;
+    }
+    body.theme-neo .result-hero {
+      background: linear-gradient(120deg, #ffe4c4, #fef08a);
+      border: 3px solid var(--border-strong);
+    }
+    body.theme-neo .status-indicator {
+      border: 2px solid var(--border-strong);
+      background: #fef08a;
+      box-shadow: 4px 4px 0 #0b1229;
+    }
+    body.theme-neo .step span {
+      background: #fef08a;
+      box-shadow: 4px 4px 0 #0b1229;
     }
     * { box-sizing: border-box; }
     body {
@@ -364,9 +486,20 @@ const renderApp = (roomId) => /* html */ `<!doctype html>
     .header-content {
       display: flex;
       justify-content: space-between;
-      align-items: baseline;
+      align-items: center;
       gap: 20px;
       flex-wrap: wrap;
+    }
+    .header-actions {
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .theme-toggle {
+      padding: 12px 16px;
+      font-size: 13px;
+      letter-spacing: 0.08em;
     }
 
     /* Typography */
@@ -426,7 +559,7 @@ const renderApp = (roomId) => /* html */ `<!doctype html>
       background: var(--bg-primary);
       padding: 40px 28px;
       text-align: center;
-      min-height: 180px;
+      min-height: 170px;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -444,14 +577,14 @@ const renderApp = (roomId) => /* html */ `<!doctype html>
       }
     }
     .result-value {
-      font-size: clamp(48px, 10vw, 80px);
-      font-weight: 400;
-      letter-spacing: -0.03em;
+      font-size: clamp(40px, 8vw, 64px);
+      font-weight: 500;
+      letter-spacing: -0.015em;
       font-family: "DM Serif Display", Georgia, serif;
       color: var(--text-primary);
       margin: 0;
-      line-height: 1.1;
-      word-break: break-word;
+      line-height: 1.05;
+      word-break: keep-all;
       max-width: 100%;
     }
     .result-meta {
@@ -535,6 +668,7 @@ const renderApp = (roomId) => /* html */ `<!doctype html>
       font-family: inherit;
       text-transform: uppercase;
       letter-spacing: 0.05em;
+      line-height: 1.1;
     }
     button:hover {
       background: var(--bg-primary);
@@ -574,7 +708,7 @@ const renderApp = (roomId) => /* html */ `<!doctype html>
       position: fixed;
       right: 20px;
       top: 20px;
-      width: 320px;
+      width: 340px;
       max-height: calc(100vh - 60px);
       z-index: 100;
       background: var(--bg-primary);
@@ -784,12 +918,12 @@ const renderApp = (roomId) => /* html */ `<!doctype html>
 
     @media (min-width: 769px) {
       main {
-        margin-right: 360px;
+        margin-right: 380px;
       }
     }
   </style>
 </head>
-<body>
+<body class="theme-neo">
   <main>
     <div class="header-card">
       <div class="header-content">
@@ -797,7 +931,10 @@ const renderApp = (roomId) => /* html */ `<!doctype html>
           <h1>Quick Draw</h1>
           <p class="subtitle">Create a room. Flip coins, draw numbers or items together in real time.</p>
         </div>
-        <div class="badge">Live sync</div>
+        <div class="header-actions">
+          <button id="themeToggle" class="secondary theme-toggle" aria-pressed="false">Neo brutalism</button>
+          <div class="badge">Live sync</div>
+        </div>
       </div>
     </div>
 
@@ -918,6 +1055,7 @@ const renderApp = (roomId) => /* html */ `<!doctype html>
       listReady: false,
       listCounts: { items: 0, drawn: 0, withReplacement: true },
     };
+    const THEME_KEY = "quickdraw-theme";
 
     const el = (id) => document.getElementById(id);
     const log = (text) => {
@@ -1027,6 +1165,17 @@ const renderApp = (roomId) => /* html */ `<!doctype html>
       return trimmed.replace(/[^a-zA-Z0-9-]/g, "");
     };
 
+    const applyTheme = (theme) => {
+      const neo = theme === "neo";
+      document.body.classList.toggle("theme-neo", neo);
+      document.body.classList.toggle("theme-classic", !neo);
+      const toggle = el("themeToggle");
+      if (toggle) {
+        toggle.textContent = neo ? "Classic mode" : "Neo brutalism";
+        toggle.setAttribute("aria-pressed", neo ? "true" : "false");
+      }
+    };
+
     // Wire UI
     if (el("createRoom")) {
       el("createRoom").onclick = async () => {
@@ -1089,6 +1238,13 @@ const renderApp = (roomId) => /* html */ `<!doctype html>
         state.ws?.send(JSON.stringify({ type: "join", name: el("nameInput").value }));
       });
     }
+    if (el("themeToggle")) {
+      el("themeToggle").onclick = () => {
+        const nextTheme = document.body.classList.contains("theme-neo") ? "classic" : "neo";
+        applyTheme(nextTheme);
+        try { localStorage.setItem(THEME_KEY, nextTheme); } catch {}
+      };
+    }
 
     if (state.roomId) {
       document.title = "Room " + state.roomId;
@@ -1100,6 +1256,10 @@ const renderApp = (roomId) => /* html */ `<!doctype html>
       connect();
     }
     updateListStatus();
+
+    // Theme boot
+    const storedTheme = (() => { try { return localStorage.getItem(THEME_KEY); } catch { return null; }})();
+    applyTheme(storedTheme === "classic" ? "classic" : "neo");
   </script>
 </body>
 </html>`;
