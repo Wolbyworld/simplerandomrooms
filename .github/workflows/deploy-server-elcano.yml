@@ -46,11 +46,11 @@ jobs:
           docker compose build app
           docker compose up -d --no-build --remove-orphans app
 
-          if ! curl --fail --silent --show-error --retry 10 --retry-delay 2 http://127.0.0.1:3900/health; then
+          if ! curl --fail --silent --show-error --retry 10 --retry-all-errors --retry-delay 2 http://127.0.0.1:3900/health; then
             if [[ "$previous_image" == randomenumbers:* ]]; then
               previous_tag="${previous_image#randomenumbers:}"
               IMAGE_TAG="$previous_tag" docker compose up -d --no-build app
-              curl --fail --silent --show-error --retry 10 --retry-delay 2 http://127.0.0.1:3900/health
+              curl --fail --silent --show-error --retry 10 --retry-all-errors --retry-delay 2 http://127.0.0.1:3900/health
             else
               docker compose down
             fi
