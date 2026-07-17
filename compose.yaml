@@ -1,7 +1,16 @@
 services:
   app:
+    image: randomenumbers:${IMAGE_TAG:-latest}
     build: .
     restart: unless-stopped
+    command:
+      - /bin/sh
+      - -c
+      - >-
+        if [ ! -f /data/random_draw.db ]; then
+          cp /app/random_draw.db.backup /data/random_draw.db;
+        fi;
+        exec uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers 1
     environment:
       DATABASE_URL: sqlite:////data/random_draw.db
     ports:

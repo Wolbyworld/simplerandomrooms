@@ -77,8 +77,9 @@ docker compose up -d --build
 curl -fsS http://127.0.0.1:3900/health
 ```
 
-Room state is stored in the `app-data` Docker volume. The tunnel should route
-`randomenumbers.madridhome.cc` to `http://localhost:3900`.
+Room state is stored in the `app-data` Docker volume. On first boot, the
+recovered database backup (32 rooms and 57 log entries) seeds that volume. The
+tunnel should route `randomenumbers.madridhome.cc` to `http://localhost:3900`.
 
 ## Project Structure
 
