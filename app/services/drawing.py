@@ -32,7 +32,12 @@ MAX_DRAW_COUNT = 100
 MAX_TOTAL_WEIGHT = 1_000_000
 DEFAULT_CONFIGS: dict[str, dict[str, Any]] = {
     "numbers": {"min": 1, "max": 100, "with_replacement": False, "draw_count": 1},
-    "list": {"items": [], "with_replacement": False, "draw_count": 1},
+    "list": {
+        "items": [],
+        "with_replacement": False,
+        "draw_count": 1,
+        "presentation": "plain",
+    },
     "coin": {"draw_count": 1},
     "dice": {"dice_count": 1, "dice_sides": 6, "draw_count": 1},
 }
@@ -80,6 +85,10 @@ def normalize_mode(value: Any) -> str:
 
 def strict_int(value: Any, detail: str) -> int:
     if isinstance(value, bool):
+        raise HTTPException(422, detail=detail)
+    if isinstance(value, float) and not value.is_integer():
+        raise HTTPException(422, detail=detail)
+    if isinstance(value, str) and not re.fullmatch(r"[+-]?\d+", value.strip()):
         raise HTTPException(422, detail=detail)
     try:
         return int(value)
@@ -195,12 +204,33 @@ def validate_config(mode: str, supplied: Any, current: dict[str, Any] | None = N
         config["with_replacement"] = strict_bool(
             config.get("with_replacement", False), "With replacement must be true or false"
         )
-        return {
+        presentation = config.get("presentation", "plain")
+        if not isinstance(presentation, str) or presentation not in {
+            "plain",
+            "winner",
+            "order",
+            "teams",
+        }:
+            raise HTTPException(
+                422,
+                detail="List presentation must be plain, winner, order, or teams",
+            )
+        canonical = {
             "items": items,
             "with_replacement": config["with_replacement"],
             "draw_count": config["draw_count"],
             "parsing": feedback,
+            "presentation": presentation,
         }
+        if presentation == "teams":
+            team_count = strict_int(
+                config.get("team_count", 2),
+                "Team count must be a whole number from 2 to 20",
+            )
+            if not 2 <= team_count <= 20:
+                raise HTTPException(422, detail="Team count must be between 2 and 20")
+            canonical["team_count"] = team_count
+        return canonical
 
     if mode == "dice":
         dice_count = strict_int(config.get("dice_count", 1), "Dice count and sides must be whole numbers")
@@ -504,6 +534,8 @@ def draw(db: Session, room: Room, *, token: str | None, actor: Any, count: Any =
                 "round_index": room.round_index,
                 "markers": markers,
                 "config": config,
+                "presentation": config.get("presentation") if room.mode == "list" else None,
+                "team_count": config.get("team_count") if room.mode == "list" else None,
             },
         )
         db.add(
