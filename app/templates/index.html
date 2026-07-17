@@ -3,11 +3,11 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="theme-color" content="#f3eddf">
+    <meta name="theme-color" content="#2447f5">
     <title>The Draw — decide fairly</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,800&family=IBM+Plex+Mono:wght@500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wdth,wght@10..48,75..100,500..800&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', path='css/styles.css') }}">
     <link rel="icon" href="{{ url_for('static', path='favicon.svg') }}" type="image/svg+xml">
     <script src="{{ url_for('static', path='js/i18n.js') }}" defer></script>
@@ -17,28 +17,33 @@
     <a class="skip-link" href="#draw-setup" data-i18n="skip">Skip to setup</a>
     <header class="site-header shell">
         <a class="wordmark" href="/" aria-label="The Draw, home">
-            <span class="wordmark-mark" aria-hidden="true">D</span>
+            <span class="wordmark-mark" aria-hidden="true"><i></i><i></i><i></i></span>
             <span data-i18n="brand">The Draw</span>
         </a>
-        <div class="language-switcher" role="group" aria-label="Language">
-            <button class="language-button" type="button" data-language="en" aria-pressed="true">EN</button>
-            <span aria-hidden="true">/</span>
-            <button class="language-button" type="button" data-language="es" aria-pressed="false">ES</button>
+        <div class="header-actions">
+            <span class="header-trust"><span aria-hidden="true">✦</span><span data-i18n="home.headerTrust">Server-drawn & fair</span></span>
+            <div class="language-switcher" role="group" aria-label="Language">
+                <button class="language-button" type="button" data-language="en" aria-pressed="true">EN</button>
+                <button class="language-button" type="button" data-language="es" aria-pressed="false">ES</button>
+            </div>
         </div>
     </header>
 
     <main class="home-main shell">
         <section class="home-intro" aria-labelledby="home-title">
-            <p class="eyebrow" data-i18n="home.eyebrow">A fair call, without the fuss</p>
-            <h1 id="home-title"><span data-i18n="home.titleLineOne">Set the rules.</span><br><em data-i18n="home.titleLineTwo">Make the draw.</em></h1>
-            <p class="home-lede" data-i18n="home.lede">Draw alone now, or share the room and decide together. Every result stays on the record.</p>
+            <div>
+                <p class="eyebrow" data-i18n="home.eyebrow">Fair choices, fast.</p>
+                <h1 id="home-title"><span data-i18n="home.titleLineOne">Decide it.</span><br><em data-i18n="home.titleLineTwo">Draw it.</em></h1>
+                <p class="home-lede" data-i18n="home.lede">Set up a fair draw in seconds, then share the room when everyone should see the result.</p>
+            </div>
+            <div class="number-motif" aria-hidden="true"><span>?</span><b>7</b><i>✦</i></div>
         </section>
 
         <section class="setup-desk" id="draw-setup" aria-labelledby="setup-title">
             <div class="setup-heading">
                 <div>
-                    <p class="desk-label" data-i18n="home.deskLabel">Referee's desk</p>
-                    <h2 id="setup-title" data-i18n="home.setupTitle">What are we deciding?</h2>
+                    <p class="desk-label" data-i18n="home.deskLabel">Start a round</p>
+                    <h2 id="setup-title" data-i18n="home.setupTitle">Pick your draw</h2>
                 </div>
                 <span class="desk-date" id="desk-date" aria-hidden="true"></span>
             </div>
@@ -126,9 +131,5 @@
         </section>
     </main>
 
-    <footer class="site-footer shell">
-        <p data-i18n="footer.note">A small, fair tool for decisions that matter.</p>
-        <span data-i18n="footer.how">Results are made and recorded by the server.</span>
-    </footer>
 </body>
 </html>

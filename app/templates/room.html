@@ -3,11 +3,11 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-    <meta name="theme-color" content="#f3eddf">
+    <meta name="theme-color" content="#2447f5">
     <title>The Draw — room</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,800&family=IBM+Plex+Mono:wght@500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wdth,wght@10..48,75..100,500..800&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', path='css/styles.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', path='css/room.css') }}">
     <link rel="icon" href="{{ url_for('static', path='favicon.svg') }}" type="image/svg+xml">
@@ -17,7 +17,7 @@
 <body data-room-code="{{ room_code or room_id }}">
     <a class="skip-link" href="#result-stage" data-i18n="room.skip">Skip to result</a>
     <header class="room-bar">
-        <a class="wordmark wordmark-compact" href="/" aria-label="The Draw, home"><span class="wordmark-mark" aria-hidden="true">D</span><span data-i18n="brand">The Draw</span></a>
+        <a class="wordmark wordmark-compact" href="/" aria-label="The Draw, home"><span class="wordmark-mark" aria-hidden="true"><i></i><i></i><i></i></span><span data-i18n="brand">The Draw</span></a>
         <div class="room-identity">
             <span class="room-label" data-i18n="room.room">Room</span>
             <button id="copy-code-button" class="room-code" type="button" data-i18n-aria="room.copyCode" aria-label="Copy room code"><span id="room-code-value">—</span><span class="copy-glyph" aria-hidden="true"></span></button>
