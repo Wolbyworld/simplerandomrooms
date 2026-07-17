@@ -1,0 +1,61 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="140" height="24" viewBox="0 0 140 24">
+  <!-- Digit 0 -->
+  <g transform="translate(0, 0)">
+    <rect width="14" height="24" fill="#000" />
+    <path d="M 7 3 A 4 8 0 1 0 7 21 A 4 8 0 1 0 7 3 Z" stroke="#f85" stroke-width="1.5" fill="none" />
+  </g>
+  
+  <!-- Digit 1 -->
+  <g transform="translate(14, 0)">
+    <rect width="14" height="24" fill="#000" />
+    <path d="M 7 3 L 7 21" stroke="#f85" stroke-width="1.5" fill="none" />
+  </g>
+  
+  <!-- Digit 2 -->
+  <g transform="translate(28, 0)">
+    <rect width="14" height="24" fill="#000" />
+    <path d="M 4 5 Q 7 3 10 5 T 10 10 L 4 20 L 10 20" stroke="#f85" stroke-width="1.5" fill="none" />
+  </g>
+  
+  <!-- Digit 3 -->
+  <g transform="translate(42, 0)">
+    <rect width="14" height="24" fill="#000" />
+    <path d="M 4 5 Q 10 3 10 8 Q 10 12 5 12 Q 10 12 10 17 Q 10 21 4 20" stroke="#f85" stroke-width="1.5" fill="none" />
+  </g>
+  
+  <!-- Digit 4 -->
+  <g transform="translate(56, 0)">
+    <rect width="14" height="24" fill="#000" />
+    <path d="M 10 18 L 10 3 L 4 15 L 11 15" stroke="#f85" stroke-width="1.5" fill="none" />
+  </g>
+  
+  <!-- Digit 5 -->
+  <g transform="translate(70, 0)">
+    <rect width="14" height="24" fill="#000" />
+    <path d="M 10 5 L 5 5 L 4 13 Q 8 11 10 13 Q 10 21 4 20" stroke="#f85" stroke-width="1.5" fill="none" />
+  </g>
+  
+  <!-- Digit 6 -->
+  <g transform="translate(84, 0)">
+    <rect width="14" height="24" fill="#000" />
+    <path d="M 9 5 L 6 5 Q 4 10 4 13 Q 4 21 10 21 Q 10 13 4 13" stroke="#f85" stroke-width="1.5" fill="none" />
+  </g>
+  
+  <!-- Digit 7 -->
+  <g transform="translate(98, 0)">
+    <rect width="14" height="24" fill="#000" />
+    <path d="M 4 5 L 10 5 L 7 21" stroke="#f85" stroke-width="1.5" fill="none" />
+  </g>
+  
+  <!-- Digit 8 -->
+  <g transform="translate(112, 0)">
+    <rect width="14" height="24" fill="#000" />
+    <path d="M 7 3 A 3 3 0 1 0 7 9 A 3 5 0 1 0 7 21 A 3 3 0 1 0 7 15 A 3 3 0 1 0 7 9" stroke="#f85" stroke-width="1.5" fill="none" />
+  </g>
+  
+  <!-- Digit 9 -->
+  <g transform="translate(126, 0)">
+    <rect width="14" height="24" fill="#000" />
+    <path d="M 10 11 Q 10 3 4 3 Q 4 11 10 11 Q 10 14 10 19 L 7 19" stroke="#f85" stroke-width="1.5" fill="none" />
+  </g>
+</svg> 
