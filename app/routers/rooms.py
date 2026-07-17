@@ -10,7 +10,7 @@ from typing import Any
 from fastapi import APIRouter, Body, Depends, Form, Header, HTTPException, Query, Request
 from fastapi.responses import JSONResponse, RedirectResponse, Response
 from fastapi.templating import Jinja2Templates
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, StrictInt
 import qrcode
 import qrcode.image.svg
 from sqlalchemy.orm import Session
@@ -42,7 +42,9 @@ class SettingsRequest(FlexibleModel):
 
 
 class DrawRequest(FlexibleModel):
-    count: int | None = None
+    # Preserve JSON's actual type at the boundary. ``int`` would coerce true,
+    # numeric strings, and integral floats before the service can reject them.
+    count: StrictInt | None = None
     actor: str = "Guest"
 
 
@@ -106,6 +108,10 @@ async def api_lookup_room(
 @router.get("/api/rooms/{lookup}/qr.svg", name="room_qr")
 async def api_room_qr(request: Request, lookup: str, db: Session = Depends(get_db)):
     room = drawing.find_room(db, lookup)
+    # A migrated V1 room receives its public code lazily. Persist it before
+    # returning a QR that points at that code, otherwise the next request could
+    # no longer resolve the link once this read-only session closes.
+    db.commit()
     url = share_url(request, room.short_code)
     qr = qrcode.QRCode(version=None, error_correction=qrcode.constants.ERROR_CORRECT_M, border=2, box_size=8)
     qr.add_data(url)
@@ -133,6 +139,9 @@ async def api_export_room(
         .order_by(RoomEvent.event_index.asc())
         .all()
     )
+    # ``find_room`` may materialize a V1 room's code/default state. Exports
+    # expose that code in their filename and response, so make it durable.
+    db.commit()
     if format == "csv":
         filename = f"draw-history-{room.short_code}.csv"
         return Response(
@@ -252,6 +261,10 @@ async def create_room_legacy(
 @router.get("/room/{room_id}", name="get_room")
 async def get_room(request: Request, room_id: str, db: Session = Depends(get_db)):
     room = drawing.find_room(db, room_id)
+    # Persist lazily materialized V1 state before rendering its short-code URL.
+    # The dependency closes (and otherwise rolls back) this session after the
+    # response, which previously left the rendered public code unresolvable.
+    db.commit()
     return templates.TemplateResponse(
         request,
         "room.html",

@@ -1,18 +1,13 @@
-from fastapi import Depends, FastAPI, Request, Query
+from fastapi import FastAPI, Request
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse, Response
-import os
+from fastapi.responses import FileResponse
 from pathlib import Path
 import asyncio
-import logging
 from contextlib import asynccontextmanager
 
 # Import database functions and routers
-from sqlalchemy.orm import Session
-
-from app.models.database import create_tables, get_db
-from app.services import drawing
+from app.models.database import create_tables
 from app.routers import rooms, websocket, stats
 
 
@@ -55,30 +50,6 @@ async def root(request: Request):
 @app.get("/health")
 async def health():
     return {"status": "healthy"}
-
-# Disconnect endpoint for navigator.sendBeacon
-@app.post("/api/disconnect")
-async def handle_disconnect(
-    request: Request,
-    room_id: str = Query(...),
-    client_id: str = Query(...),
-    db: Session = Depends(get_db),
-):
-    try:
-        # Log the disconnect request
-        logging.info(f"Received disconnect beacon from client {client_id} in room {room_id}")
-        
-        # Disconnect the client from the WebSocket manager
-        room = drawing.find_room(db, room_id)
-        disconnected = websocket.manager.disconnect(room.id, client_id)
-        if disconnected:
-            await websocket.manager.broadcast_state(room.id)
-        
-        # Return an empty response
-        return Response(status_code=204)
-    except Exception as e:
-        logging.error(f"Error handling disconnect: {e}")
-        return Response(status_code=getattr(e, "status_code", 400))
 
 # Include routers
 app.include_router(rooms.router)

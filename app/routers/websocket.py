@@ -33,22 +33,23 @@ class ConnectionManager:
         client_id: str,
         name: str,
         token: str | None,
-    ) -> None:
+    ) -> bool:
+        # A client id is a reconnect handle, not an identity proof. Never let a
+        # second connection evict a live participant that happens to use the
+        # same id. Refreshes naturally retry after the old socket closes.
+        if room_id in self.active_rooms and client_id in self.active_rooms[room_id]:
+            await websocket.close(code=1008, reason="Client id is already connected")
+            return False
         await websocket.accept()
         self.active_rooms.setdefault(room_id, {})
         self.user_names.setdefault(room_id, {})
         self.host_tokens.setdefault(room_id, {})
         self.last_activity.setdefault(room_id, {})
-        old = self.active_rooms[room_id].get(client_id)
-        if old is not None and old is not websocket:
-            try:
-                await old.close(code=1000, reason="Reconnected from another session")
-            except Exception:
-                pass
         self.active_rooms[room_id][client_id] = websocket
         self.user_names[room_id][client_id] = drawing.clean_actor(name)
         self.host_tokens[room_id][client_id] = token
         self.last_activity[room_id][client_id] = datetime.utcnow()
+        return True
 
     def disconnect(self, room_id: str, client_id: str, websocket: WebSocket | None = None) -> bool:
         connections = self.active_rooms.get(room_id)
@@ -64,16 +65,26 @@ class ConnectionManager:
                 mapping.pop(room_id, None)
         return True
 
-    def get_users(self, room_id: str, room: Any | None = None) -> list[dict[str, Any]]:
+    def get_users(
+        self,
+        room_id: str,
+        room: Any | None = None,
+        viewer_client_id: str | None = None,
+    ) -> list[dict[str, Any]]:
         users = []
         for client_id, username in self.user_names.get(room_id, {}).items():
             token = self.host_tokens.get(room_id, {}).get(client_id)
             users.append(
                 {
-                    "client_id": client_id,
+                    # Do not disclose the reconnect handle to other
+                    # participants. Names and host status are sufficient for
+                    # the presence UI and avoid a socket-takeover primitive.
                     "name": username,
                     "username": username,  # V1 compatibility
                     "is_host": drawing.is_host(room, token) if room is not None else False,
+                    # This recipient-specific boolean supports a clear
+                    # presence UI without exposing reconnect handles.
+                    "is_self": client_id == viewer_client_id,
                     "connected": True,
                 }
             )
@@ -94,10 +105,10 @@ class ConnectionManager:
                 room = drawing.find_room(db, room_id)
             except Exception:
                 return
-            participants = self.get_users(room_id, room)
             for client_id, websocket in connections:
                 try:
                     token = self.host_tokens.get(room_id, {}).get(client_id)
+                    participants = self.get_users(room_id, room, client_id)
                     state = drawing.serialize_state(db, room, token=token, participants=participants)
                     await websocket.send_json({"type": "state", "state": state})
                 except Exception:
@@ -161,7 +172,6 @@ async def websocket_endpoint(
     lookup: str,
     client_id: str,
     name: str = "Guest",
-    host_token: str | None = None,
     db: Session = Depends(get_db),
 ):
     try:
@@ -171,9 +181,11 @@ async def websocket_endpoint(
         await websocket.close(code=1008, reason="Invalid room or client id")
         return
     room_id = room.id
-    # Browser WebSocket APIs cannot set custom auth headers. The token may be
-    # supplied in the query string, or more privately in a first ``auth`` message.
-    await manager.connect(websocket, room_id, client_id, name, host_token)
+    # Browser WebSocket APIs cannot set custom auth headers. Keep the room
+    # credential out of URLs (and therefore access logs/referrers): hosts send
+    # it in their first ``auth`` message after the participant-safe state.
+    if not await manager.connect(websocket, room_id, client_id, name, None):
+        return
     await manager.broadcast_state(room_id)
     try:
         while True:

@@ -27,6 +27,8 @@ DRAW_POLICIES = {"host_only", "anyone"}
 CODE_ALPHABET = "23456789ABCDEFGHJKLMNPQRSTUVWXYZ"
 CODE_LENGTH = 6
 MAX_LIST_ITEMS = 5_000
+MAX_LIST_TEXT_CHARS = 200_000
+MAX_LIST_CANDIDATES = 10_000
 MAX_NUMBER_SPAN = 100_000
 MAX_DRAW_COUNT = 100
 MAX_TOTAL_WEIGHT = 1_000_000
@@ -113,8 +115,16 @@ def parse_list_input(raw: Any) -> tuple[list[dict[str, Any]], dict[str, int]]:
     if raw is None:
         candidates = []
     elif isinstance(raw, str):
+        if len(raw) > MAX_LIST_TEXT_CHARS:
+            raise HTTPException(422, detail="List text is too long")
+        # Avoid constructing an arbitrarily large list before rejecting an
+        # adversarial comma/tab/newline payload.
+        if sum(char in "\n\r,\t" for char in raw) + 1 > MAX_LIST_CANDIDATES:
+            raise HTTPException(422, detail="List contains too many entries")
         candidates = re.split(r"[\n\r,\t]+", raw)
     elif isinstance(raw, list):
+        if len(raw) > MAX_LIST_CANDIDATES:
+            raise HTTPException(422, detail="List contains too many entries")
         candidates = raw
     else:
         raise HTTPException(422, detail="List items must be text or an array")
@@ -136,7 +146,15 @@ def parse_list_input(raw: Any) -> tuple[list[dict[str, Any]], dict[str, int]]:
                 if not match:
                     raise HTTPException(422, detail="Weighted items must use Name :: positive whole number")
                 label, weight = match.groups()
-        label = " ".join(str(label).split()).strip()
+        # Control and format characters include bidi overrides. Keep list
+        # labels as safe, stable text just as we do participant names, so a
+        # stored result cannot visually reorder or spoof another label.
+        label = "".join(
+            char
+            for char in str(label)
+            if unicodedata.category(char) not in {"Cc", "Cf"}
+        )
+        label = " ".join(label.split()).strip()
         if not label:
             blank_count += 1
             continue
