@@ -1,10 +1,6 @@
-from fastapi.testclient import TestClient
 import re
-from app.main import app
 
-client = TestClient(app)
-
-def test_create_room():
+def test_create_room(client):
     # Test room creation (coin flip)
     response = client.post(
         "/create-room", 
@@ -31,7 +27,7 @@ def test_create_room():
     assert "Coin Flip" in room_response.text
     assert "flip-coin-btn" in room_response.text
 
-def test_create_number_draw_room():
+def test_create_number_draw_room(client):
     # Test room creation (number draw)
     response = client.post(
         "/create-room", 
@@ -58,4 +54,4 @@ def test_create_number_draw_room():
     assert "Number Draw" in room_response.text
     assert "draw-number-btn" in room_response.text
     assert "min-value" in room_response.text
-    assert "max-value" in room_response.text 
+    assert "max-value" in room_response.text

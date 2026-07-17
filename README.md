@@ -67,6 +67,19 @@ pytest
    heroku open
    ```
 
+## server-elcano
+
+The application can run behind the existing Cloudflare tunnel without exposing
+its container port to the LAN:
+
+```sh
+docker compose up -d --build
+curl -fsS http://127.0.0.1:3900/health
+```
+
+Room state is stored in the `app-data` Docker volume. The tunnel should route
+`randomenumbers.madridhome.cc` to `http://localhost:3900`.
+
 ## Project Structure
 
 - `app/`: Main application code
@@ -79,4 +92,4 @@ pytest
 
 ## License
 
-MIT 
+MIT

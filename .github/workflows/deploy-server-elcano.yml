@@ -1,0 +1,31 @@
+name: Deploy to server-elcano
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: randomenumbers-production
+  cancel-in-progress: false
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - run: pip install -r requirements.txt
+      - run: pytest -q
+
+  deploy:
+    needs: test
+    runs-on: [self-hosted, Linux, X64, randomenumbers]
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker compose up -d --build --remove-orphans
+      - name: Verify local health
+        run: curl --fail --silent --show-error --retry 10 --retry-delay 2 http://127.0.0.1:3900/health
