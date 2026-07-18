@@ -39,7 +39,10 @@ app.mount("/static", StaticFiles(directory=str(BASE_DIR / "static")), name="stat
 # Define favicon endpoints
 @app.get("/favicon.ico")
 async def favicon():
-    return FileResponse(str(BASE_DIR / "static" / "favicon.ico"))
+    return FileResponse(
+        str(BASE_DIR / "static" / "favicon.ico"),
+        media_type="image/x-icon",
+    )
 
 # Define root endpoint
 @app.get("/")
